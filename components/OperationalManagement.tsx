@@ -7,36 +7,26 @@ import {
   Server,
   Package,
   FileText,
-  ChevronDown,
-  Monitor,
   Layers,
   ShieldCheck,
-  Save,
   X,
   Eye,
   EyeOff
 } from 'lucide-react';
-import { Project, OperationalInfo, HardwareInfo, SoftwareInfo, AccessInfo } from '../types';
+import { Project, OperationalInfo, AccessInfo } from '../types';
+import { HardwareForm, SoftwareForm, AccessForm } from './operational/OperationalForms';
 
 interface Props {
-  projects: Project[]; // 사용자가 권한을 가진 프로젝트 목록
-  opsInfo: OperationalInfo[]; // 전체 운영 정보 데이터
-  onUpdate: (info: OperationalInfo) => void; // 데이터 업데이트 콜백
+  projects: Project[];
+  opsInfo: OperationalInfo[];
+  onUpdate: (info: OperationalInfo) => void;
 }
 
-/**
- * 운영정보 관리 컴포넌트
- * 하드웨어, 소프트웨어, 접속정보, 기타 참고사항을 프로젝트별로 리스트 형식으로 관리합니다.
- */
 const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate }) => {
-  // 현재 선택된 프로젝트 ID
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projects[0]?.id || '');
-
-  // 모달 및 편집 상태 관리
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<{ type: 'hardware' | 'software' | 'access', data: any } | null>(null);
 
-  // 현재 선택된 프로젝트의 운영 정보
   const currentOpsInfo = useMemo(() => {
     return opsInfo.find(o => o.projectId === selectedProjectId) || {
       projectId: selectedProjectId,
@@ -47,12 +37,11 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
     };
   }, [opsInfo, selectedProjectId]);
 
-  // 저장 처리
   const handleSave = (updatedData: any) => {
     const newOpsInfo = { ...currentOpsInfo };
     if (editingItem) {
       const type = editingItem.type;
-      const list = newOpsInfo[type] as any[];
+      const list = [...(newOpsInfo[type] as any[])];
       const index = list.findIndex(item => item.id === updatedData.id);
 
       if (index > -1) {
@@ -60,27 +49,31 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
       } else {
         list.push({ ...updatedData, id: `item-${Date.now()}` });
       }
-      onUpdate(newOpsInfo);
+
+      onUpdate({
+        ...newOpsInfo,
+        [type]: list
+      });
       setIsModalOpen(false);
       setEditingItem(null);
     }
   };
 
-  // 삭제 처리
   const handleDelete = (type: 'hardware' | 'software' | 'access', id: string) => {
     if (window.confirm('정말 삭제하시겠습니까?')) {
       const newOpsInfo = { ...currentOpsInfo };
-      (newOpsInfo[type] as any[]) = (newOpsInfo[type] as any[]).filter(item => item.id !== id);
-      onUpdate(newOpsInfo);
+      const updatedList = (newOpsInfo[type] as any[]).filter(item => item.id !== id);
+      onUpdate({
+        ...newOpsInfo,
+        [type]: updatedList
+      });
     }
   };
 
-  // 비고 업데이트
   const handleUpdateOtherNotes = (notes: string) => {
     onUpdate({ ...currentOpsInfo, otherNotes: notes });
   };
 
-  // 섹션 헤더
   const SectionHeader = ({ title, icon: Icon, type, colorClass }: any) => (
     <div className="flex justify-between items-center mb-4">
       <div className="flex items-center gap-3">
@@ -116,7 +109,6 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20">
-      {/* 상단 프로젝트 선택 */}
       <div className="sticky top-[88px] z-20 bg-white/90 backdrop-blur-md rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
@@ -140,7 +132,6 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        {/* 하드웨어 리스트 */}
         <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 overflow-hidden">
           <SectionHeader title="하드웨어 (Hardware)" icon={Server} type="hardware" colorClass="bg-blue-100 text-blue-600" />
           <div className="overflow-x-auto">
@@ -182,7 +173,6 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
           </div>
         </section>
 
-        {/* 소프트웨어 리스트 */}
         <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 overflow-hidden">
           <SectionHeader title="소프트웨어 (Software)" icon={Package} type="software" colorClass="bg-emerald-100 text-emerald-600" />
           <div className="overflow-x-auto">
@@ -222,7 +212,6 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
           </div>
         </section>
 
-        {/* 접속정보 리스트 */}
         <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 overflow-hidden">
           <SectionHeader title="접속정보 (Access Info)" icon={ShieldCheck} type="access" colorClass="bg-amber-100 text-amber-600" />
           <div className="overflow-x-auto">
@@ -250,7 +239,6 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
           </div>
         </section>
 
-        {/* 기타 참고사항 */}
         <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
           <SectionHeader title="기타 참고사항 (Other Notes)" icon={FileText} type="other" colorClass="bg-rose-100 text-rose-600" />
           <textarea
@@ -262,7 +250,6 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
         </section>
       </div>
 
-      {/* 모달 */}
       {isModalOpen && editingItem && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
@@ -284,7 +271,6 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
   );
 };
 
-/** 접속정보 테이블 행 (비밀번호 보이기 포함) */
 const AccessRow: React.FC<{ item: AccessInfo, onEdit: () => void, onDelete: () => void }> = ({ item, onEdit, onDelete }) => {
   const [showPass, setShowPass] = useState(false);
   return (
@@ -308,87 +294,6 @@ const AccessRow: React.FC<{ item: AccessInfo, onEdit: () => void, onDelete: () =
         </div>
       </td>
     </tr>
-  );
-};
-
-// --- 입력 폼 (모달용) ---
-
-const HardwareForm = ({ initialData, onSave }: any) => {
-  const [data, setData] = useState<HardwareInfo>({ id: '', usage: '', cpu: '', memory: '', hdd: '', notes: '', manufacturer: '', model: '', remarks: '', ...initialData });
-  return (
-    <div className="space-y-4 font-bold">
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="text-[10px] text-slate-400 ml-1 uppercase">용도</label>
-          <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.usage} onChange={e => setData({ ...data, usage: e.target.value })} /></div>
-        <div><label className="text-[10px] text-slate-400 ml-1 uppercase">제조사</label>
-          <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.manufacturer} onChange={e => setData({ ...data, manufacturer: e.target.value })} /></div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="text-[10px] text-slate-400 ml-1 uppercase">모델명</label>
-          <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.model} onChange={e => setData({ ...data, model: e.target.value })} /></div>
-        <div><label className="text-[10px] text-slate-400 ml-1 uppercase">CPU</label>
-          <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.cpu} onChange={e => setData({ ...data, cpu: e.target.value })} /></div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="text-[10px] text-slate-400 ml-1 uppercase">Memory</label>
-          <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.memory} onChange={e => setData({ ...data, memory: e.target.value })} /></div>
-        <div><label className="text-[10px] text-slate-400 ml-1 uppercase">HDD</label>
-          <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.hdd} onChange={e => setData({ ...data, hdd: e.target.value })} /></div>
-      </div>
-      <div><label className="text-[10px] text-slate-400 ml-1 uppercase">비고</label>
-        <textarea className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none min-h-[80px]" value={data.remarks} onChange={e => setData({ ...data, remarks: e.target.value })} /></div>
-      <button onClick={() => onSave(data)} className="w-full py-3.5 bg-blue-600 text-white rounded-xl flex items-center justify-center gap-2 mt-2 font-black shadow-lg shadow-blue-100"><Save size={16} /> 저장하기</button>
-    </div>
-  );
-};
-
-const SoftwareForm = ({ initialData, onSave }: any) => {
-  const [data, setData] = useState<SoftwareInfo>({ id: '', usage: '', productVersion: '', installPath: '', notes: '', manufacturer: '', techSupport: '', remarks: '', ...initialData });
-  return (
-    <div className="space-y-4 font-bold">
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="text-[10px] text-slate-400 ml-1 uppercase">용도</label>
-          <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.usage} onChange={e => setData({ ...data, usage: e.target.value })} /></div>
-        <div><label className="text-[10px] text-slate-400 ml-1 uppercase">개발사</label>
-          <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.manufacturer} onChange={e => setData({ ...data, manufacturer: e.target.value })} /></div>
-      </div>
-      <div><label className="text-[10px] text-slate-400 ml-1 uppercase">제품 및 버전</label>
-        <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.productVersion} onChange={e => setData({ ...data, productVersion: e.target.value })} /></div>
-      <div><label className="text-[10px] text-slate-400 ml-1 uppercase">설치경로</label>
-        <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.installPath} onChange={e => setData({ ...data, installPath: e.target.value })} /></div>
-      <div><label className="text-[10px] text-slate-400 ml-1 uppercase">기술지원</label>
-        <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.techSupport} onChange={e => setData({ ...data, techSupport: e.target.value })} /></div>
-      <button onClick={() => onSave(data)} className="w-full py-3.5 bg-emerald-600 text-white rounded-xl flex items-center justify-center gap-2 mt-2 font-black shadow-lg shadow-emerald-100"><Save size={16} /> 저장하기</button>
-    </div>
-  );
-};
-
-const AccessForm = ({ initialData, onSave }: any) => {
-  const [data, setData] = useState<AccessInfo>({ id: '', target: '', loginId: '', password1: '', password2: '', usage: '', notes: '', remarks: '', ...initialData });
-  const [showPass1, setShowPass1] = useState(false);
-  return (
-    <div className="space-y-4 font-bold">
-      <div><label className="text-[10px] text-slate-400 ml-1 uppercase">접속 대상</label>
-        <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.target} onChange={e => setData({ ...data, target: e.target.value })} /></div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="text-[10px] text-slate-400 ml-1 uppercase">ID</label>
-          <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.loginId} onChange={e => setData({ ...data, loginId: e.target.value })} /></div>
-        <div><label className="text-[10px] text-slate-400 ml-1 uppercase">용도</label>
-          <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.usage} onChange={e => setData({ ...data, usage: e.target.value })} /></div>
-      </div>
-      <div>
-        <label className="text-[10px] text-slate-400 ml-1 uppercase">비밀번호</label>
-        <div className="relative">
-          <input type={showPass1 ? "text" : "password"} placeholder="••••••••" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.password1} onChange={e => setData({ ...data, password1: e.target.value })} />
-          <button onClick={() => setShowPass1(!showPass1)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors">
-            {showPass1 ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        </div>
-      </div>
-      <div><label className="text-[10px] text-slate-400 ml-1 uppercase">비고</label>
-        <textarea className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none min-h-[80px]" value={data.remarks} onChange={e => setData({ ...data, remarks: e.target.value })} /></div>
-      <button onClick={() => onSave(data)} className="w-full py-3.5 bg-amber-600 text-white rounded-xl flex items-center justify-center gap-2 mt-2 font-black shadow-lg shadow-amber-100"><Save size={16} /> 저장하기</button>
-    </div>
   );
 };
 

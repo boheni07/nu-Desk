@@ -3,26 +3,23 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Ticket, TicketStatus, User, Project, HistoryEntry, Comment, UserRole } from '../types';
 import { formatDate, addBusinessDays } from '../utils';
 import { format, isAfter, startOfDay } from 'date-fns';
-import { 
-  FileText, 
-  Send, 
-  Paperclip, 
-  History, 
-  Info, 
+import {
+  FileText,
+  Paperclip,
+  Info,
   Star,
   CheckCircle2,
-  Clock,
   AlertCircle,
-  MessageSquare,
   Briefcase,
-  X,
   Shield,
   CalendarDays,
   AlertTriangle,
-  PlayCircle,
   CheckCircle,
-  RotateCcw
 } from 'lucide-react';
+import Modal from './common/Modal';
+import StatusBadge from './common/StatusBadge';
+import ActivityHistory from './ticket/ActivityHistory';
+import CommentSection from './ticket/CommentSection';
 
 interface Props {
   ticket: Ticket;
@@ -38,25 +35,22 @@ interface Props {
 
 const ALLOWED_EXTENSIONS = ".pdf,.doc,.docx,.xlsx,.xls,.pptx,.ppt,.png,.jpg,.jpeg,.gif,.webp,.hwp,.txt";
 
-const TicketDetail: React.FC<Props> = ({ 
-  ticket, 
-  project, 
+const TicketDetail: React.FC<Props> = ({
+  ticket,
+  project,
   users,
-  history, 
-  comments, 
-  currentUser, 
-  onStatusUpdate, 
+  history,
+  comments,
+  currentUser,
+  onStatusUpdate,
   onAddComment,
-  onBack 
+  onBack
 }) => {
   const [planText, setPlanText] = useState('');
   const [expectedCompletionDate, setExpectedCompletionDate] = useState(format(new Date(ticket.dueDate), 'yyyy-MM-dd'));
   const [delayReason, setDelayReason] = useState('');
   const [planFiles, setPlanFiles] = useState<File[]>([]);
-  
-  const [commentText, setCommentText] = useState('');
-  const [commentFiles, setCommentFiles] = useState<File[]>([]);
-  const commentFileInputRef = useRef<HTMLInputElement>(null);
+
   const planFileInputRef = useRef<HTMLInputElement>(null);
 
   const [showPostponeModal, setShowPostponeModal] = useState(false);
@@ -64,7 +58,7 @@ const TicketDetail: React.FC<Props> = ({
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [showRejectCompleteModal, setShowRejectCompleteModal] = useState(false);
-  
+
   const [postponeDate, setPostponeDate] = useState('');
   const [postponeReason, setPostponeReason] = useState('');
   const [rejectReason, setRejectReason] = useState('');
@@ -84,9 +78,9 @@ const TicketDetail: React.FC<Props> = ({
 
     if (isSupportUser && isPartOfProjectTeam && ticket.status === TicketStatus.WAITING) {
       onStatusUpdate(
-        ticket.id, 
-        TicketStatus.RECEIVED, 
-        {}, 
+        ticket.id,
+        TicketStatus.RECEIVED,
+        {},
         `지원팀 티켓 접수 및 검토 시작`
       );
     }
@@ -108,8 +102,8 @@ const TicketDetail: React.FC<Props> = ({
     if (!planText) { alert('처리 계획을 입력해주세요.'); return; }
     const fileListStr = planFiles.length > 0 ? ` (첨부파일: ${planFiles.map(f => f.name).join(', ')})` : '';
     const note = `처리 계획 등록: ${planText} (완료 예정: ${format(new Date(expectedCompletionDate), 'yyyy-MM-dd')})${fileListStr}`;
-    onStatusUpdate(ticket.id, TicketStatus.IN_PROGRESS, { 
-      plan: planText, 
+    onStatusUpdate(ticket.id, TicketStatus.IN_PROGRESS, {
+      plan: planText,
       expectedCompletionDate: new Date(expectedCompletionDate).toISOString(),
       expectedCompletionDelayReason: isCompletionDelayed ? delayReason : undefined,
       planAttachments: planFiles.map(f => f.name)
@@ -117,26 +111,13 @@ const TicketDetail: React.FC<Props> = ({
     setPlanFiles([]);
   };
 
-  const handleAddComment = () => {
-    if (!commentText.trim() && commentFiles.length === 0) return;
-    onAddComment({ 
-      ticketId: ticket.id, 
-      authorId: currentUser.id, 
-      authorName: currentUser.name, 
-      content: commentText,
-      attachments: commentFiles.map(f => f.name)
-    });
-    setCommentText('');
-    setCommentFiles([]);
-  };
-
   const handlePostponeRequest = () => {
     if (!postponeDate || !postponeReason) { alert('연기 희망일과 사유를 모두 입력해주세요.'); return; }
     const originalDateStr = format(new Date(ticket.dueDate), 'yyyy-MM-dd');
     const note = `[기한 연기 요청]\n당초 기한: ${originalDateStr}\n요청 기한: ${postponeDate}\n요청 사유: ${postponeReason}`;
-    onStatusUpdate(ticket.id, TicketStatus.POSTPONE_REQUESTED, { 
+    onStatusUpdate(ticket.id, TicketStatus.POSTPONE_REQUESTED, {
       postponeDate: new Date(postponeDate).toISOString(),
-      postponeReason 
+      postponeReason
     }, note);
     setShowPostponeModal(false);
   };
@@ -144,7 +125,7 @@ const TicketDetail: React.FC<Props> = ({
   const handleApprovePostpone = () => {
     const newDateStr = ticket.postponeDate ? format(new Date(ticket.postponeDate), 'yyyy-MM-dd') : '알 수 없음';
     const note = `[연기 승인] 마감 기한이 ${newDateStr}(으)로 연장되었습니다.`;
-    onStatusUpdate(ticket.id, TicketStatus.IN_PROGRESS, { 
+    onStatusUpdate(ticket.id, TicketStatus.IN_PROGRESS, {
       dueDate: ticket.postponeDate,
       postponeDate: undefined,
       postponeReason: undefined
@@ -180,32 +161,6 @@ const TicketDetail: React.FC<Props> = ({
     setShowRejectCompleteModal(false);
   };
 
-  const getStatusBadge = (status: TicketStatus) => {
-    switch (status) {
-      case TicketStatus.WAITING: return 'bg-amber-50 text-amber-700 border-amber-200';
-      case TicketStatus.RECEIVED: return 'bg-blue-50 text-blue-700 border-blue-200';
-      case TicketStatus.IN_PROGRESS: return 'bg-indigo-50 text-indigo-700 border-indigo-200';
-      case TicketStatus.DELAYED: return 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse';
-      case TicketStatus.POSTPONE_REQUESTED: return 'bg-orange-50 text-orange-700 border-orange-200';
-      case TicketStatus.COMPLETION_REQUESTED: return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      case TicketStatus.COMPLETED: return 'bg-slate-50 text-slate-500 border-slate-200';
-      default: return 'bg-slate-50 text-slate-600';
-    }
-  };
-
-  const getHistoryIcon = (status: TicketStatus) => {
-    switch (status) {
-      case TicketStatus.WAITING: return <Clock size={12} />;
-      case TicketStatus.RECEIVED: return <PlayCircle size={12} />;
-      case TicketStatus.IN_PROGRESS: return <RotateCcw size={12} />;
-      case TicketStatus.POSTPONE_REQUESTED: return <CalendarDays size={12} />;
-      case TicketStatus.COMPLETION_REQUESTED: return <CheckCircle2 size={12} />;
-      case TicketStatus.COMPLETED: return <CheckCircle size={12} />;
-      case TicketStatus.DELAYED: return <AlertTriangle size={12} />;
-      default: return <Info size={12} />;
-    }
-  };
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Main Column */}
@@ -215,9 +170,7 @@ const TicketDetail: React.FC<Props> = ({
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 <span className="text-xs font-mono font-black text-blue-600 bg-blue-100/50 px-2.5 py-1 rounded-lg shrink-0">{ticket.id}</span>
-                <span className={`px-3 py-1 rounded-full text-[11px] font-black border uppercase tracking-wider ${getStatusBadge(ticket.status)}`}>
-                  {ticket.status}
-                </span>
+                <StatusBadge status={ticket.status} />
               </div>
               <h1 className="text-2xl sm:text-3xl font-black text-slate-900 break-words leading-tight">{ticket.title}</h1>
             </div>
@@ -327,58 +280,12 @@ const TicketDetail: React.FC<Props> = ({
         </div>
 
         {/* Chat/Comment Section */}
-        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-6 sm:p-10 overflow-hidden">
-          <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center gap-3"><div className="p-2 bg-blue-600 rounded-xl text-white shadow-lg"><MessageSquare size={20} /></div> 의견 나누기</h3>
-          <div className="mb-10">
-            <div className="relative border border-slate-200 rounded-2xl overflow-hidden focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500 transition-all bg-slate-50 shadow-inner">
-              <textarea className="w-full px-5 py-4 outline-none text-sm resize-none min-h-[100px] bg-transparent leading-relaxed" placeholder="추가 의견이나 자료를 공유하세요..." value={commentText} onChange={(e) => setCommentText(e.target.value)} />
-              {commentFiles.length > 0 && (
-                <div className="px-5 py-2 flex flex-wrap gap-2">
-                  {commentFiles.map((f, i) => (
-                    <span key={i} className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 text-[10px] font-bold text-slate-600 rounded-lg">
-                      <span className="truncate max-w-[100px]">{f.name}</span>
-                      <X size={12} className="cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setCommentFiles(prev => prev.filter((_, idx) => idx !== i))} />
-                    </span>
-                  ))}
-                </div>
-              )}
-              <div className="p-3 bg-white border-t border-slate-100 flex justify-between items-center">
-                <button onClick={() => commentFileInputRef.current?.click()} className="p-2.5 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors flex items-center gap-2">
-                  <Paperclip size={20} /> <span className="text-[10px] font-black uppercase text-slate-400 hidden sm:inline">Attach</span>
-                  <input type="file" multiple accept={ALLOWED_EXTENSIONS} className="hidden" ref={commentFileInputRef} onChange={(e) => e.target.files && setCommentFiles(prev => [...prev, ...Array.from(e.target.files!)])} />
-                </button>
-                <button onClick={handleAddComment} className="px-8 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-black flex items-center gap-2 hover:bg-blue-700 shadow-lg active:scale-95 transition-all"><Send size={16} /> 전송</button>
-              </div>
-            </div>
-          </div>
-          <div className="space-y-8 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-            {comments.map((c) => {
-              const isMine = c.authorId === currentUser.id;
-              return (
-                <div key={c.id} className={`flex w-full ${isMine ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-top-4`}>
-                  <div className={`flex items-end gap-3 max-w-[90%] sm:max-w-[80%] ${isMine ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
-                    <div className="shrink-0 flex flex-col gap-1 pb-1">
-                      <span className="text-[11px] font-black text-slate-900">{c.authorName}</span>
-                      <span className="text-[9px] text-slate-400 font-bold uppercase">{formatDate(c.timestamp)}</span>
-                    </div>
-                    <div className={`px-5 py-3.5 rounded-2xl text-sm font-medium leading-relaxed border shadow-sm break-words ${isMine ? 'bg-blue-600 border-blue-500 text-white rounded-br-none' : 'bg-white border-slate-200 text-slate-700 rounded-tl-none'}`}>
-                      {c.content}
-                      {c.attachments && c.attachments.length > 0 && (
-                        <div className={`mt-3 pt-3 border-t ${isMine ? 'border-white/20' : 'border-slate-100'} flex flex-wrap gap-2`}>
-                          {c.attachments.map((f, i) => (
-                            <span key={i} className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold ${isMine ? 'bg-white/10 text-white border border-white/20' : 'bg-slate-50 text-slate-500 border border-slate-200'}`}>
-                              <Paperclip size={10} /> {f}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <CommentSection
+          comments={comments}
+          currentUser={currentUser}
+          onAddComment={onAddComment}
+          ticketId={ticket.id}
+        />
       </div>
 
       <div className="lg:col-span-4 space-y-6">
@@ -391,7 +298,7 @@ const TicketDetail: React.FC<Props> = ({
           </section>
           <div className="h-px bg-slate-100" />
           <section>
-             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2.5"><Shield size={14} className="text-indigo-500" /> Support Team</h3>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2.5"><Shield size={14} className="text-indigo-500" /> Support Team</h3>
             <div className="space-y-3">
               {supportStaff.map((u, idx) => (
                 <div key={u.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
@@ -403,26 +310,7 @@ const TicketDetail: React.FC<Props> = ({
           </section>
         </div>
 
-        <div className="bg-slate-900 rounded-[2rem] shadow-2xl p-8 text-slate-100 overflow-hidden relative border border-slate-800">
-          <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3 relative z-10"><History size={16} className="text-blue-400" /> Activity History</h3>
-          <div className="relative space-y-6 before:absolute before:inset-0 before:left-[11px] before:w-[2px] before:bg-slate-800 z-10">
-            {history.map((h, i) => (
-              <div key={h.id} className="relative pl-10 group cursor-default">
-                <div className={`absolute left-0 top-1.5 w-[24px] h-[24px] rounded-full border-4 border-slate-900 z-10 flex items-center justify-center transition-all duration-300 ${i === 0 ? 'bg-blue-600 scale-110 shadow-lg' : 'bg-slate-700'}`}>
-                  <div className="text-white transform scale-[0.8]">{getHistoryIcon(h.status)}</div>
-                </div>
-                <div className="absolute left-full ml-6 top-0 z-[100] w-72 p-5 bg-black border border-slate-700 text-slate-100 text-xs rounded-[1.5rem] shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 -translate-x-4 group-hover:translate-x-0 pointer-events-none">
-                  <div className="flex justify-between items-center mb-4 pb-3 border-b border-white/10"><span className="font-black text-blue-400 text-[10px] uppercase">{h.status}</span><span className="text-[10px] text-slate-500 font-mono">{formatDate(h.timestamp)}</span></div>
-                  <p className="leading-relaxed font-bold text-slate-100 whitespace-pre-wrap">{h.note || '별도의 처리 내역이 없습니다.'}</p>
-                </div>
-                <div className="flex flex-col gap-1 transition-all">
-                  <div className="flex justify-between items-start"><span className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider ${i === 0 ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'}`}>{h.status}</span></div>
-                  <p className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-tight">{h.changedBy}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ActivityHistory history={history} />
       </div>
 
       {showPostponeModal && (
@@ -466,15 +354,5 @@ const TicketDetail: React.FC<Props> = ({
     </div>
   );
 };
-
-const Modal: React.FC<{ title: string; onClose: () => void; onConfirm: () => void; confirmText: string; confirmColor?: string; children: React.ReactNode; }> = ({ title, onClose, onConfirm, confirmText, confirmColor = 'bg-blue-600', children }) => (
-  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
-    <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] border border-slate-100">
-      <div className="px-10 pt-10 pb-6 flex justify-between items-center shrink-0"><h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase flex items-center gap-3"><div className="w-2 h-8 bg-blue-600 rounded-full" /> {title}</h3><button onClick={onClose} className="p-3 hover:bg-slate-100 rounded-full text-slate-400"><X size={24} /></button></div>
-      <div className="px-10 py-6 overflow-y-auto custom-scrollbar flex-1">{children}</div>
-      <div className="px-10 pb-12 pt-6 flex flex-col sm:flex-row gap-4 shrink-0"><button onClick={onClose} className="flex-1 px-8 py-4.5 text-slate-500 font-black hover:bg-slate-50 rounded-2xl transition-all uppercase text-xs">취소</button><button onClick={onConfirm} className={`flex-1 px-8 py-4.5 ${confirmColor} text-white font-black rounded-2xl shadow-xl transition-all active:scale-95 uppercase text-xs tracking-widest`}>{confirmText}</button></div>
-    </div>
-  </div>
-);
 
 export default TicketDetail;

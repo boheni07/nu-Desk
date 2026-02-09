@@ -1,0 +1,307 @@
+
+import { supabase } from '../supabaseClient';
+import { Company, User, Project, Ticket, Comment, HistoryEntry, OperationalInfo } from '../types';
+
+/** 
+ * Supabase 관계형 데이터베이스 처리 로직
+ * 각 테이블별로 독립적인 페치 및 저장 기능을 제공합니다.
+ */
+
+// --- 1. Companies (고객사) ---
+export const fetchCompanies = async (): Promise<Company[]> => {
+    const { data, error } = await supabase.from('companies').select('*');
+    if (error) throw error;
+    return data || [];
+};
+
+export const saveCompany = async (company: Company) => {
+    const { error } = await supabase.from('companies').upsert(company);
+    if (error) throw error;
+};
+
+export const saveCompanies = async (companies: Company[]) => {
+    const { error } = await supabase.from('companies').upsert(companies);
+    if (error) throw error;
+};
+
+export const deleteCompany = async (id: string) => {
+    const { error } = await supabase.from('companies').delete().eq('id', id);
+    if (error) throw error;
+};
+
+// --- 2. Users (사용자) ---
+export const fetchUsers = async (): Promise<User[]> => {
+    const { data, error } = await supabase.from('users').select('*');
+    if (error) throw error;
+    // DB의 snake_case와 코드의 camelCase 매핑 (supabase-js 자동변환이 안 될 경우 대비)
+    return (data || []).map(u => ({
+        ...u,
+        loginId: u.login_id,
+        companyId: u.company_id
+    }));
+};
+
+export const saveUser = async (user: User) => {
+    const { error } = await supabase.from('users').upsert({
+        id: user.id,
+        login_id: user.loginId,
+        password: user.password,
+        name: user.name,
+        role: user.role,
+        status: user.status,
+        company_id: user.companyId,
+        mobile: user.mobile,
+        email: user.email,
+        phone: user.phone
+    });
+    if (error) throw error;
+};
+
+export const saveUsers = async (users: User[]) => {
+    const mapped = users.map(user => ({
+        id: user.id,
+        login_id: user.loginId,
+        password: user.password,
+        name: user.name,
+        role: user.role,
+        status: user.status,
+        company_id: user.companyId,
+        mobile: user.mobile,
+        email: user.email,
+        phone: user.phone
+    }));
+    const { error } = await supabase.from('users').upsert(mapped);
+    if (error) throw error;
+};
+
+export const deleteUser = async (id: string) => {
+    const { error } = await supabase.from('users').delete().eq('id', id);
+    if (error) throw error;
+};
+
+// --- 3. Projects (프로젝트) ---
+export const fetchProjects = async (): Promise<Project[]> => {
+    const { data, error } = await supabase.from('projects').select('*');
+    if (error) throw error;
+    return (data || []).map(p => ({
+        ...p,
+        clientId: p.client_id,
+        customerContactIds: p.customer_contact_ids || [],
+        supportStaffIds: p.support_staff_ids || [],
+        startDate: p.start_date,
+        endDate: p.end_date
+    }));
+};
+
+export const saveProject = async (project: Project) => {
+    const { error } = await supabase.from('projects').upsert({
+        id: project.id,
+        name: project.name,
+        client_id: project.clientId,
+        description: project.description,
+        start_date: project.startDate,
+        end_date: project.endDate,
+        status: project.status,
+        customer_contact_ids: project.customerContactIds,
+        support_staff_ids: project.supportStaffIds
+    });
+    if (error) throw error;
+};
+
+export const saveProjects = async (projects: Project[]) => {
+    const mapped = projects.map(project => ({
+        id: project.id,
+        name: project.name,
+        client_id: project.clientId,
+        description: project.description,
+        start_date: project.startDate,
+        end_date: project.endDate,
+        status: project.status,
+        customer_contact_ids: project.customerContactIds,
+        support_staff_ids: project.supportStaffIds
+    }));
+    const { error } = await supabase.from('projects').upsert(mapped);
+    if (error) throw error;
+};
+
+export const deleteProject = async (id: string) => {
+    const { error } = await supabase.from('projects').delete().eq('id', id);
+    if (error) throw error;
+};
+
+// --- 4. Tickets (서비스 요청) ---
+export const fetchTickets = async (): Promise<Ticket[]> => {
+    const { data, error } = await supabase.from('tickets').select('*');
+    if (error) throw error;
+    return (data || []).map(t => ({
+        ...t,
+        customerId: t.customer_id,
+        customerName: t.customer_name,
+        projectId: t.project_id,
+        supportId: t.support_id,
+        supportName: t.support_name,
+        expectedCompletionDate: t.expected_completion_date,
+        completionFeedback: t.completion_feedback,
+        createdAt: t.created_at,
+        dueDate: t.due_date
+    }));
+};
+
+export const saveTicket = async (ticket: Ticket) => {
+    const { error } = await supabase.from('tickets').upsert({
+        id: ticket.id,
+        title: ticket.title,
+        description: ticket.description,
+        status: ticket.status,
+        customer_id: ticket.customerId,
+        customer_name: ticket.customerName,
+        project_id: ticket.projectId,
+        support_id: ticket.supportId,
+        support_name: ticket.supportName,
+        plan: ticket.plan,
+        expected_completion_date: ticket.expectedCompletionDate,
+        satisfaction: ticket.satisfaction,
+        completion_feedback: ticket.completionFeedback,
+        created_at: ticket.createdAt,
+        due_date: ticket.dueDate
+    });
+    if (error) throw error;
+};
+
+export const saveTickets = async (tickets: Ticket[]) => {
+    const mapped = tickets.map(ticket => ({
+        id: ticket.id,
+        title: ticket.title,
+        description: ticket.description,
+        status: ticket.status,
+        customer_id: ticket.customerId,
+        customer_name: ticket.customerName,
+        project_id: ticket.projectId,
+        support_id: ticket.supportId,
+        support_name: ticket.supportName,
+        plan: ticket.plan,
+        expected_completion_date: ticket.expectedCompletionDate,
+        satisfaction: ticket.satisfaction,
+        completion_feedback: ticket.completionFeedback,
+        created_at: ticket.createdAt,
+        due_date: ticket.dueDate
+    }));
+    const { error } = await supabase.from('tickets').upsert(mapped);
+    if (error) throw error;
+};
+
+export const deleteTicket = async (id: string) => {
+    const { error } = await supabase.from('tickets').delete().eq('id', id);
+    if (error) throw error;
+};
+
+// --- 5. Comments (댓글) ---
+export const fetchComments = async (): Promise<Comment[]> => {
+    const { data, error } = await supabase.from('comments').select('*');
+    if (error) throw error;
+    return (data || []).map(c => ({
+        ...c,
+        ticketId: c.ticket_id,
+        authorId: c.author_id,
+        authorName: c.author_name
+    }));
+};
+
+export const saveComment = async (comment: Comment) => {
+    const { error } = await supabase.from('comments').upsert({
+        id: comment.id,
+        ticket_id: comment.ticketId,
+        author_id: comment.authorId,
+        author_name: comment.authorName,
+        content: comment.content,
+        timestamp: comment.timestamp
+    });
+    if (error) throw error;
+};
+
+export const saveComments = async (comments: Comment[]) => {
+    const mapped = comments.map(comment => ({
+        id: comment.id,
+        ticket_id: comment.ticketId,
+        author_id: comment.authorId,
+        author_name: comment.authorName,
+        content: comment.content,
+        timestamp: comment.timestamp
+    }));
+    const { error } = await supabase.from('comments').upsert(mapped);
+    if (error) throw error;
+};
+
+// --- 6. Operational Info (운영 정보) ---
+export const fetchAllOpsInfo = async (): Promise<OperationalInfo[]> => {
+    const { data, error } = await supabase.from('operational_info').select('*');
+    if (error) throw error;
+    return (data || []).map(o => ({
+        projectId: o.project_id,
+        hardware: o.hardware,
+        software: o.software,
+        access: o.access,
+        otherNotes: o.other_notes
+    }));
+};
+
+export const saveOpsInfo = async (info: OperationalInfo) => {
+    const { error } = await supabase.from('operational_info').upsert({
+        project_id: info.projectId,
+        hardware: info.hardware,
+        software: info.software,
+        access: info.access,
+        other_notes: info.otherNotes,
+        updated_at: new Date().toISOString()
+    });
+    if (error) throw error;
+};
+
+export const saveOpsInfos = async (infos: OperationalInfo[]) => {
+    const mapped = infos.map(info => ({
+        project_id: info.projectId,
+        hardware: info.hardware,
+        software: info.software,
+        access: info.access,
+        other_notes: info.otherNotes,
+        updated_at: new Date().toISOString()
+    }));
+    const { error } = await supabase.from('operational_info').upsert(mapped);
+    if (error) throw error;
+};
+
+// --- 7. History (이력) ---
+export const fetchHistory = async (): Promise<HistoryEntry[]> => {
+    const { data, error } = await supabase.from('history').select('*');
+    if (error) throw error;
+    return (data || []).map(h => ({
+        ...h,
+        ticketId: h.ticket_id,
+        changedBy: h.changed_by
+    }));
+};
+
+export const saveHistoryEntry = async (entry: HistoryEntry) => {
+    const { error } = await supabase.from('history').upsert({
+        id: entry.id,
+        ticket_id: entry.ticketId,
+        status: entry.status,
+        changed_by: entry.changedBy,
+        timestamp: entry.timestamp,
+        note: entry.note
+    });
+    if (error) throw error;
+};
+
+export const saveHistoryEntries = async (entries: HistoryEntry[]) => {
+    const mapped = entries.map(entry => ({
+        id: entry.id,
+        ticket_id: entry.ticketId,
+        status: entry.status,
+        changed_by: entry.changedBy,
+        timestamp: entry.timestamp,
+        note: entry.note
+    }));
+    const { error } = await supabase.from('history').upsert(mapped);
+    if (error) throw error;
+};

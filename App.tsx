@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { UserRole, Ticket, TicketStatus, User, Project, Company, Comment, HistoryEntry, ProjectStatus, UserStatus, CompanyStatus, IntakeMethod, OperationalInfo } from './types';
+import { UserRole, Ticket, TicketStatus, User, Project, Company, Comment, HistoryEntry, ProjectStatus, UserStatus, CompanyStatus, IntakeMethod, OperationalInfo, AppState } from './types';
 import { addBusinessDays, isOverdue } from './utils';
 import {
   PlusCircle,
@@ -15,6 +15,8 @@ import {
   Database,
   Activity
 } from 'lucide-react';
+import NavItem from './components/layout/NavItem';
+import LoadingOverlay from './components/common/LoadingOverlay';
 import { addDays } from 'date-fns';
 import TicketList from './components/TicketList';
 import TicketDetail from './components/TicketDetail';
@@ -25,6 +27,7 @@ import ProjectManagement from './components/ProjectManagement';
 import ProfileEdit from './components/ProfileEdit';
 import DataManagement from './components/DataManagement';
 import OperationalManagement from './components/OperationalManagement';
+import * as storage from './lib/storage';
 
 // 1. Initial Sample Companies
 export const initialCompanies: Company[] = [
@@ -74,32 +77,104 @@ const App: React.FC = () => {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // 1. 초기 데이터 로드 (Supabase 관계형)
   useEffect(() => {
-    const now = new Date();
-    const sampleTickets = getInitialTickets(now);
-    const sampleHistory: HistoryEntry[] = [];
-    sampleTickets.forEach(t => {
-      sampleHistory.push({ id: `h-${t.id}-init`, ticketId: t.id, status: TicketStatus.WAITING, changedBy: t.customerName, timestamp: t.createdAt, note: '티켓이 신규 등록되었습니다.' });
-      if (t.status !== TicketStatus.WAITING) {
-        sampleHistory.push({ id: `h-${t.id}-received`, ticketId: t.id, status: TicketStatus.RECEIVED, changedBy: t.supportName || '시스템', timestamp: addDays(new Date(t.createdAt), 1).toISOString(), note: '티켓이 접수되었습니다.' });
+    const initApp = async () => {
+      setIsLoading(true);
+      try {
+        // 개별 테이블 로드 (하나라도 실패하면 로그 남김)
+        const savedUsers = await storage.fetchUsers().catch(e => { console.error('Users load failed:', e); return []; });
+
+        if (savedUsers.length > 0) {
+          // 사용자가 있으면 다른 데이터도 로드
+          const [
+            savedCompanies,
+            savedProjects,
+            savedTickets,
+            savedComments,
+            savedHistory,
+            savedOpsInfo
+          ] = await Promise.all([
+            storage.fetchCompanies().catch(() => []),
+            storage.fetchProjects().catch(() => []),
+            storage.fetchTickets().catch(() => []),
+            storage.fetchComments().catch(() => []),
+            storage.fetchHistory().catch(() => []),
+            storage.fetchAllOpsInfo().catch(() => [])
+          ]);
+
+          setCompanies(savedCompanies);
+          setUsers(savedUsers);
+          setProjects(savedProjects);
+          setTickets(savedTickets);
+          setComments(savedComments);
+          setHistory(savedHistory);
+          setOpsInfo(savedOpsInfo);
+          const admin = savedUsers.find(u => u.role === UserRole.ADMIN) || savedUsers[0];
+          setCurrentUser(admin);
+        } else {
+          // 데이터가 없으면 샘플 데이터 시딩
+          console.log('초기 데이터가 없어 시딩을 시작합니다...');
+          const now = new Date();
+          const sampleTickets = getInitialTickets(now);
+          const sampleHistory: HistoryEntry[] = [];
+          sampleTickets.forEach(t => {
+            sampleHistory.push({ id: `h-${t.id}-init`, ticketId: t.id, status: TicketStatus.WAITING, changedBy: t.customerName, timestamp: t.createdAt, note: '티켓이 신규 등록되었습니다.' });
+          });
+
+          setTickets(sampleTickets);
+          setHistory(sampleHistory);
+
+          // Supabase 시딩
+          try {
+            await storage.saveCompanies(initialCompanies);
+            await storage.saveUsers(initialUsers);
+            await storage.saveProjects(initialProjects);
+            await storage.saveTickets(sampleTickets);
+            await storage.saveHistoryEntries(sampleHistory);
+            console.log('시딩 완료');
+          } catch (seedErr) {
+            console.error('시딩 중 오류 발생 (테이블이 없거나 권한 문제):', seedErr);
+          }
+        }
+      } catch (err) {
+        console.error('초기 로딩 중 알 수 없는 오류 발생:', err);
+      } finally {
+        setIsLoading(false);
       }
-    });
-    setTickets(sampleTickets);
-    setHistory(sampleHistory);
+    };
+
+    initApp();
   }, []);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTickets(prev => prev.map(t => {
-        if (t.status !== TicketStatus.COMPLETED && t.status !== TicketStatus.DELAYED && isOverdue(t.dueDate)) {
-          return { ...t, status: TicketStatus.DELAYED };
+    const timer = setInterval(async () => {
+      const overdueTickets = tickets.filter(t =>
+        t.status !== TicketStatus.COMPLETED &&
+        t.status !== TicketStatus.DELAYED &&
+        isOverdue(t.dueDate)
+      );
+
+      if (overdueTickets.length > 0) {
+        setTickets(prev => prev.map(t => {
+          if (t.status !== TicketStatus.COMPLETED && t.status !== TicketStatus.DELAYED && isOverdue(t.dueDate)) {
+            return { ...t, status: TicketStatus.DELAYED };
+          }
+          return t;
+        }));
+
+        for (const t of overdueTickets) {
+          const updatedTicket = { ...t, status: TicketStatus.DELAYED };
+          const historyEntry: HistoryEntry = { id: `h-${Date.now()}-${t.id}`, ticketId: t.id, status: TicketStatus.DELAYED, changedBy: 'System', timestamp: new Date().toISOString(), note: '기한 도과로 인해 상태가 지연(DELAYED)으로 자동 변경되었습니다.' };
+          await storage.saveTicket(updatedTicket);
+          await storage.saveHistoryEntry(historyEntry);
         }
-        return t;
-      }));
+      }
     }, 60000);
     return () => clearInterval(timer);
-  }, []);
+  }, [tickets]);
 
   // PERMISSION FILTERING
   const filteredProjects = useMemo(() => {
@@ -120,13 +195,13 @@ const App: React.FC = () => {
     tickets.find(t => t.id === selectedTicketId), [tickets, selectedTicketId]
   );
 
-  const changeView = (newView: typeof view) => {
+  const changeView = React.useCallback((newView: typeof view) => {
     setView(newView);
     setIsSidebarOpen(false);
-  };
+  }, []);
 
   // HANDLERS
-  const handleCreateTicket = (newTicket: Omit<Ticket, 'id' | 'createdAt' | 'status'>) => {
+  const handleCreateTicket = React.useCallback(async (newTicket: Omit<Ticket, 'id' | 'createdAt' | 'status'>) => {
     const project = projects.find(p => p.id === newTicket.projectId);
     const pmId = project?.supportStaffIds[0];
     const pmUser = users.find(u => u.id === pmId);
@@ -138,79 +213,111 @@ const App: React.FC = () => {
       supportId: pmId,
       supportName: pmUser?.name,
     };
-    setTickets([ticket, ...tickets]);
-    setHistory([{ id: `h-${Date.now()}`, ticketId: ticket.id, status: ticket.status, changedBy: currentUser.name, timestamp: new Date().toISOString(), note: '티켓이 신규 등록되었습니다.' }, ...history]);
-    changeView('list');
-  };
 
-  const handleUpdateTicket = (id: string, updatedData: Partial<Ticket>) => {
-    setTickets(prev => prev.map(t => t.id === id ? { ...t, ...updatedData } : t));
-    setHistory([{ id: `h-${Date.now()}`, ticketId: id, status: tickets.find(t => t.id === id)?.status || TicketStatus.WAITING, changedBy: currentUser.name, timestamp: new Date().toISOString(), note: '티켓 정보가 수정되었습니다.' }, ...history]);
+    setTickets(prev => [ticket, ...prev]);
+    const historyEntry: HistoryEntry = { id: `h-${Date.now()}`, ticketId: ticket.id, status: ticket.status, changedBy: currentUser.name, timestamp: new Date().toISOString(), note: '티켓이 신규 등록되었습니다.' };
+    setHistory(prev => [historyEntry, ...prev]);
+
+    await storage.saveTicket(ticket);
+    await storage.saveHistoryEntry(historyEntry);
+
+    changeView('list');
+  }, [projects, users, currentUser, changeView]);
+
+  const handleUpdateTicket = React.useCallback(async (id: string, updatedData: Partial<Ticket>) => {
+    const ticket = tickets.find(t => t.id === id);
+    if (!ticket) return;
+    const updatedTicket = { ...ticket, ...updatedData };
+
+    setTickets(prev => prev.map(t => t.id === id ? updatedTicket : t));
+    const historyEntry: HistoryEntry = { id: `h-${Date.now()}`, ticketId: id, status: updatedTicket.status, changedBy: currentUser.name, timestamp: new Date().toISOString(), note: '티켓 정보가 수정되었습니다.' };
+    setHistory(prev => [historyEntry, ...prev]);
+
+    await storage.saveTicket(updatedTicket);
+    await storage.saveHistoryEntry(historyEntry);
+
     changeView('list');
     setEditingTicket(null);
-  };
+  }, [tickets, currentUser, changeView]);
 
-  const handleDeleteTicket = (id: string) => {
+  const handleDeleteTicket = React.useCallback(async (id: string) => {
     if (window.confirm('정말 이 티켓을 삭제하시겠습니까?')) {
       setTickets(prev => prev.filter(t => t.id !== id));
       setHistory(prev => prev.filter(h => h.ticketId !== id));
       setComments(prev => prev.filter(c => c.ticketId !== id));
       if (selectedTicketId === id) setSelectedTicketId(null);
+
+      await storage.deleteTicket(id);
+    }
+  }, [selectedTicketId]);
+
+  const updateTicketStatus = React.useCallback(async (ticketId: string, newStatus: TicketStatus, updates: Partial<Ticket> = {}, note?: string) => {
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (!ticket) return;
+    const updatedTicket = { ...ticket, ...updates, status: newStatus };
+
+    setTickets(prev => prev.map(t => t.id === ticketId ? updatedTicket : t));
+    const historyEntry: HistoryEntry = { id: `h-${Date.now()}`, ticketId, status: newStatus, changedBy: currentUser.name, timestamp: new Date().toISOString(), note: note || `상태가 ${newStatus}(으)로 변경되었습니다.` };
+    setHistory(prev => [historyEntry, ...prev]);
+
+    await storage.saveTicket(updatedTicket);
+    await storage.saveHistoryEntry(historyEntry);
+  }, [tickets, currentUser]);
+
+  const addComment = React.useCallback(async (commentData: Omit<Comment, 'id' | 'timestamp'>) => {
+    const comment: Comment = { ...commentData, id: `c-${Date.now()}`, timestamp: new Date().toISOString() };
+    setComments(prev => [comment, ...prev]);
+    await storage.saveComment(comment);
+  }, []);
+
+  const handleUpdateUser = React.useCallback(async (id: string, userData: Partial<User>) => {
+    setUsers(prev => {
+      const updated = prev.map(u => u.id === id ? { ...u, ...userData } : u);
+      const updatedUser = updated.find(u => u.id === id);
+      if (id === currentUser.id && updatedUser) {
+        setCurrentUser(updatedUser);
+      }
+      if (updatedUser) storage.saveUser(updatedUser);
+      return updated;
+    });
+  }, [currentUser.id]);
+
+  const handleApplyState = async (newState: AppState) => {
+    setIsLoading(true);
+    try {
+      // 로컬 상태 업데이트
+      setCompanies(newState.companies);
+      setUsers(newState.users);
+      setProjects(newState.projects);
+      setTickets(newState.tickets);
+      setComments(newState.comments);
+      setHistory(newState.history);
+      if (newState.opsInfo) setOpsInfo(newState.opsInfo);
+
+      const foundUser = newState.users.find(u => u.id === currentUser.id) || newState.users[0];
+      setCurrentUser(foundUser);
+
+      // Supabase 동기화 (기존 데이터 전체 삭제는 위험하므로 업데이트/삽입 위주로 처리)
+      // 실제 운영 환경에서는 TRUNCATE 후 시딩하거나 정교한 DIFF 알고리즘이 필요하지만,
+      // 여기서는 새로운 상태의 모든 객체를 upsert 합니다.
+      await storage.saveCompanies(newState.companies);
+      await storage.saveUsers(newState.users);
+      await storage.saveProjects(newState.projects);
+      await storage.saveTickets(newState.tickets);
+      await storage.saveComments(newState.comments);
+      await storage.saveHistoryEntries(newState.history);
+      if (newState.opsInfo) {
+        await storage.saveOpsInfos(newState.opsInfo);
+      }
+
+      console.log('Supabase 동기화 완료');
+    } catch (err) {
+      console.error('상태 적용 중 오류 발생:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const updateTicketStatus = (ticketId: string, newStatus: TicketStatus, updates: Partial<Ticket> = {}, note?: string) => {
-    setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...updates, status: newStatus } : t));
-    setHistory([{ id: `h-${Date.now()}`, ticketId, status: newStatus, changedBy: currentUser.name, timestamp: new Date().toISOString(), note: note || `상태가 ${newStatus}(으)로 변경되었습니다.` }, ...history]);
-  };
-
-  const addComment = (commentData: Omit<Comment, 'id' | 'timestamp'>) => {
-    setComments([{ ...commentData, id: `c-${Date.now()}`, timestamp: new Date().toISOString() }, ...comments]);
-  };
-
-  const handleUpdateUser = (id: string, userData: Partial<User>) => {
-    const updatedUsers = users.map(u => u.id === id ? { ...u, ...userData } : u);
-    setUsers(updatedUsers);
-    if (id === currentUser.id) {
-      setCurrentUser(updatedUsers.find(u => u.id === id)!);
-    }
-  };
-
-  const handleApplyState = (newState: {
-    companies: Company[];
-    users: User[];
-    projects: Project[];
-    tickets: Ticket[];
-    comments: Comment[];
-    history: HistoryEntry[];
-    opsInfo?: OperationalInfo[];
-  }) => {
-    setCompanies(newState.companies);
-    setUsers(newState.users);
-    setProjects(newState.projects);
-    setTickets(newState.tickets);
-    setComments(newState.comments);
-    setHistory(newState.history);
-    if (newState.opsInfo) setOpsInfo(newState.opsInfo);
-    // Find current user in new state to maintain role consistency or default to first user
-    const foundUser = newState.users.find(u => u.id === currentUser.id) || newState.users[0];
-    setCurrentUser(foundUser);
-  };
-
-  const NavItem = ({ icon: Icon, label, targetView, adminOnly = false, supportOrAdmin = false }: any) => {
-    if (adminOnly && currentUser.role !== UserRole.ADMIN) return null;
-    if (supportOrAdmin && (currentUser.role !== UserRole.ADMIN && currentUser.role !== UserRole.SUPPORT)) return null;
-    return (
-      <button
-        onClick={() => changeView(targetView)}
-        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${view === targetView ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-          }`}
-      >
-        <Icon size={20} />
-        <span className="text-sm">{label}</span>
-      </button>
-    );
-  };
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -224,15 +331,15 @@ const App: React.FC = () => {
           <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 hover:bg-slate-800 rounded-lg"><X size={20} /></button>
         </div>
         <nav className="flex-1 p-6 space-y-2 overflow-y-auto custom-scrollbar">
-          <NavItem icon={PlusCircle} label="New Ticket" targetView="create" />
-          <NavItem icon={TicketIcon} label="티켓 관리" targetView="list" />
+          <NavItem icon={PlusCircle} label="New Ticket" targetView="create" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
+          <NavItem icon={TicketIcon} label="티켓 관리" targetView="list" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
           <div className="pt-8 pb-3 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">Management</div>
-          <NavItem icon={Briefcase} label="프로젝트 관리" targetView="projects" supportOrAdmin />
-          <NavItem icon={Activity} label="운영정보 관리" targetView="opsManagement" supportOrAdmin />
-          <NavItem icon={Building2} label="고객사 관리" targetView="companies" adminOnly />
-          <NavItem icon={UsersIcon} label="회원 관리" targetView="users" adminOnly />
+          <NavItem icon={Briefcase} label="프로젝트 관리" targetView="projects" currentView={view} currentUserRole={currentUser.role} onClick={changeView} supportOrAdmin />
+          <NavItem icon={Activity} label="운영정보 관리" targetView="opsManagement" currentView={view} currentUserRole={currentUser.role} onClick={changeView} supportOrAdmin />
+          <NavItem icon={Building2} label="고객사 관리" targetView="companies" currentView={view} currentUserRole={currentUser.role} onClick={changeView} adminOnly />
+          <NavItem icon={UsersIcon} label="회원 관리" targetView="users" currentView={view} currentUserRole={currentUser.role} onClick={changeView} adminOnly />
           <div className="pt-8 pb-3 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">System</div>
-          <NavItem icon={Database} label="데이터 관리" targetView="dataManagement" adminOnly />
+          <NavItem icon={Database} label="데이터 관리" targetView="dataManagement" currentView={view} currentUserRole={currentUser.role} onClick={changeView} adminOnly />
           <div className="px-4 pt-4">
             <label className="block text-[10px] text-slate-500 mb-2 uppercase font-bold">Role Simulator</label>
             <select className="bg-slate-800 text-xs rounded-lg p-2.5 w-full border-none focus:ring-2 focus:ring-blue-500 outline-none text-slate-300" value={currentUser.id} onChange={(e) => setCurrentUser(users.find(u => u.id === e.target.value)!)}>
@@ -259,58 +366,123 @@ const App: React.FC = () => {
           <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold" onClick={() => changeView('profile')}>{currentUser.name[0]}</div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-10 max-w-[1440px] w-full mx-auto">
-          <div className="mb-6 lg:mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                {view === 'list' && 'Tickets Overview'}
-                {view === 'create' && 'Create New Ticket'}
-                {view === 'edit' && 'Edit Ticket'}
-                {view === 'detail' && `Ticket ${selectedTicketId}`}
-                {view === 'companies' && 'Company Management'}
-                {view === 'users' && 'User Management'}
-                {view === 'projects' && 'Project Management'}
-                {view === 'opsManagement' && 'Operational Management'}
-                {view === 'profile' && 'My Account Settings'}
-                {view === 'dataManagement' && 'Data Management'}
-              </h2>
-              <p className="text-slate-500 text-sm sm:text-base mt-1">안녕하세요, {currentUser.name}님! {view === 'list' && '현재 활성화된 티켓 리스트입니다.'}</p>
+        {isLoading ? <LoadingOverlay /> : (
+          <main className="flex-1 p-4 sm:p-6 lg:p-10 max-w-[1440px] w-full mx-auto">
+            <div className="mb-6 lg:mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                  {view === 'list' && 'Tickets Overview'}
+                  {view === 'create' && 'Create New Ticket'}
+                  {view === 'edit' && 'Edit Ticket'}
+                  {view === 'detail' && `Ticket ${selectedTicketId}`}
+                  {view === 'companies' && 'Company Management'}
+                  {view === 'users' && 'User Management'}
+                  {view === 'projects' && 'Project Management'}
+                  {view === 'opsManagement' && 'Operational Management'}
+                  {view === 'profile' && 'My Account Settings'}
+                  {view === 'dataManagement' && 'Data Management'}
+                </h2>
+                <p className="text-slate-500 text-sm sm:text-base mt-1">안녕하세요, {currentUser.name}님! {view === 'list' && '현재 활성화된 티켓 리스트입니다.'}</p>
+              </div>
+              {(view === 'detail' || view === 'edit' || view === 'dataManagement') && <button onClick={() => changeView('list')} className="flex items-center gap-2 text-slate-500 hover:text-blue-600 font-bold px-4 py-2 rounded-xl border border-slate-200 bg-white shadow-sm transition-all self-start"><ChevronLeft size={20} /> Back to List</button>}
             </div>
-            {(view === 'detail' || view === 'edit' || view === 'dataManagement') && <button onClick={() => changeView('list')} className="flex items-center gap-2 text-slate-500 hover:text-blue-600 font-bold px-4 py-2 rounded-xl border border-slate-200 bg-white shadow-sm transition-all self-start"><ChevronLeft size={20} /> Back to List</button>}
-          </div>
 
-          <div className="relative">
-            {view === 'list' && <TicketList tickets={filteredTickets} currentUser={currentUser} onSelect={(id) => { setSelectedTicketId(id); setView('detail'); }} onEdit={(ticket) => { setEditingTicket(ticket); setView('edit'); }} onDelete={handleDeleteTicket} />}
-            {view === 'create' && <TicketCreate projects={filteredProjects.filter(p => p.status === ProjectStatus.ACTIVE)} currentUser={currentUser} onSubmit={handleCreateTicket} onCancel={() => changeView('list')} />}
-            {view === 'edit' && editingTicket && <TicketCreate projects={filteredProjects.filter(p => p.status === ProjectStatus.ACTIVE)} currentUser={currentUser} initialData={editingTicket} onSubmit={(data) => handleUpdateTicket(editingTicket.id, data)} onCancel={() => { setEditingTicket(null); changeView('list'); }} />}
-            {view === 'detail' && selectedTicket && <TicketDetail ticket={selectedTicket} project={projects.find(p => p.id === selectedTicket.projectId)!} users={users} history={history.filter(h => h.ticketId === selectedTicket.id)} comments={comments.filter(c => c.ticketId === selectedTicket.id)} currentUser={currentUser} onStatusUpdate={updateTicketStatus} onAddComment={addComment} onBack={() => changeView('list')} />}
-            {view === 'companies' && currentUser.role === UserRole.ADMIN && <CompanyManagement companies={companies} onAdd={(data) => setCompanies([...companies, { ...data, id: `c${Date.now()}` }])} onUpdate={(id, data) => { setCompanies(companies.map(c => c.id === id ? { ...c, ...data } : c)); return true; }} onDelete={(id) => setCompanies(companies.filter(c => c.id !== id))} />}
-            {view === 'users' && currentUser.role === UserRole.ADMIN && <UserManagement users={users} companies={companies} onAdd={(data) => setUsers([...users, { ...data, id: `u${Date.now()}` }])} onUpdate={handleUpdateUser} onDelete={(id) => setUsers(users.filter(u => u.id !== id))} />}
-            {view === 'projects' && (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.SUPPORT) && <ProjectManagement projects={filteredProjects} companies={companies} users={users} currentUser={currentUser} onAdd={(data) => setProjects([...projects, { ...data, id: `p${Date.now()}` }])} onUpdate={(id, data) => { setProjects(projects.map(p => p.id === id ? { ...p, ...data } : p)); return true; }} onDelete={(id) => setProjects(projects.filter(p => p.id !== id))} />}
-            {/* 운영정보 관리: 권한이 있는 프로젝트의 정보만 표시 */}
-            {view === 'opsManagement' && (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.SUPPORT) && (
-              <OperationalManagement
-                projects={filteredProjects}
-                opsInfo={opsInfo}
-                onUpdate={(newOpsInfo) => {
-                  const exists = opsInfo.find(o => o.projectId === newOpsInfo.projectId);
-                  if (exists) {
-                    setOpsInfo(opsInfo.map(o => o.projectId === newOpsInfo.projectId ? newOpsInfo : o));
-                  } else {
-                    setOpsInfo([...opsInfo, newOpsInfo]);
-                  }
-                }}
-              />
-            )}
-            {view === 'profile' && <ProfileEdit user={currentUser} companyName={currentUser.companyId ? companies.find(c => c.id === currentUser.companyId)?.name : '본사 (nu)'} onUpdate={(data) => handleUpdateUser(currentUser.id, data)} onCancel={() => changeView('list')} />}
-            {view === 'dataManagement' && currentUser.role === UserRole.ADMIN && (
-              <DataManagement
-                currentState={{ companies, users, projects, tickets, comments, history, opsInfo }}
-                onApplyState={handleApplyState}
-              />
-            )}
-          </div>
-        </main>
+            <div className="relative">
+              {view === 'list' && <TicketList tickets={filteredTickets} currentUser={currentUser} onSelect={(id) => { setSelectedTicketId(id); setView('detail'); }} onEdit={(ticket) => { setEditingTicket(ticket); setView('edit'); }} onDelete={handleDeleteTicket} />}
+              {view === 'create' && <TicketCreate projects={filteredProjects.filter(p => p.status === ProjectStatus.ACTIVE)} currentUser={currentUser} onSubmit={handleCreateTicket} onCancel={() => changeView('list')} />}
+              {view === 'edit' && editingTicket && <TicketCreate projects={filteredProjects.filter(p => p.status === ProjectStatus.ACTIVE)} currentUser={currentUser} initialData={editingTicket} onSubmit={(data) => handleUpdateTicket(editingTicket.id, data)} onCancel={() => { setEditingTicket(null); changeView('list'); }} />}
+              {view === 'detail' && selectedTicket && <TicketDetail ticket={selectedTicket} project={projects.find(p => p.id === selectedTicket.projectId)!} users={users} history={history.filter(h => h.ticketId === selectedTicket.id)} comments={comments.filter(c => c.ticketId === selectedTicket.id)} currentUser={currentUser} onStatusUpdate={updateTicketStatus} onAddComment={addComment} onBack={() => changeView('list')} />}
+              {view === 'companies' && currentUser.role === UserRole.ADMIN && (
+                <CompanyManagement
+                  companies={companies}
+                  onAdd={async (data) => {
+                    const company = { ...data, id: `c${Date.now()}` };
+                    setCompanies([...companies, company]);
+                    await storage.saveCompany(company);
+                  }}
+                  onUpdate={async (id, data) => {
+                    const company = companies.find(c => c.id === id);
+                    if (company) {
+                      const updated = { ...company, ...data };
+                      setCompanies(companies.map(c => c.id === id ? updated : c));
+                      await storage.saveCompany(updated);
+                    }
+                    return true;
+                  }}
+                  onDelete={async (id) => {
+                    setCompanies(companies.filter(c => c.id !== id));
+                    await storage.deleteCompany(id);
+                  }}
+                />
+              )}
+              {view === 'users' && currentUser.role === UserRole.ADMIN && (
+                <UserManagement
+                  users={users}
+                  companies={companies}
+                  onAdd={async (data) => {
+                    const user = { ...data, id: `u${Date.now()}` };
+                    setUsers([...users, user]);
+                    await storage.saveUser(user);
+                  }}
+                  onUpdate={handleUpdateUser}
+                  onDelete={async (id) => {
+                    setUsers(users.filter(u => u.id !== id));
+                    await storage.deleteUser(id);
+                  }}
+                />
+              )}
+              {view === 'projects' && (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.SUPPORT) && (
+                <ProjectManagement
+                  projects={filteredProjects}
+                  companies={companies}
+                  users={users}
+                  currentUser={currentUser}
+                  onAdd={async (data) => {
+                    const project = { ...data, id: `p${Date.now()}` };
+                    setProjects([...projects, project]);
+                    await storage.saveProject(project);
+                  }}
+                  onUpdate={async (id, data) => {
+                    const project = projects.find(p => p.id === id);
+                    if (project) {
+                      const updated = { ...project, ...data };
+                      setProjects(projects.map(p => p.id === id ? updated : p));
+                      await storage.saveProject(updated);
+                    }
+                    return true;
+                  }}
+                  onDelete={async (id) => {
+                    setProjects(projects.filter(p => p.id !== id));
+                    await storage.deleteProject(id);
+                  }}
+                />
+              )}
+              {/* 운영정보 관리: 권한이 있는 프로젝트의 정보만 표시 */}
+              {view === 'opsManagement' && (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.SUPPORT) && (
+                <OperationalManagement
+                  projects={filteredProjects}
+                  opsInfo={opsInfo}
+                  onUpdate={async (newOpsInfo) => {
+                    const exists = opsInfo.find(o => o.projectId === newOpsInfo.projectId);
+                    if (exists) {
+                      setOpsInfo(opsInfo.map(o => o.projectId === newOpsInfo.projectId ? newOpsInfo : o));
+                    } else {
+                      setOpsInfo([...opsInfo, newOpsInfo]);
+                    }
+                    await storage.saveOpsInfo(newOpsInfo);
+                  }}
+                />
+              )}
+              {view === 'profile' && <ProfileEdit user={currentUser} companyName={currentUser.companyId ? companies.find(c => c.id === currentUser.companyId)?.name : '본사 (nu)'} onUpdate={(data) => handleUpdateUser(currentUser.id, data)} onCancel={() => changeView('list')} />}
+              {view === 'dataManagement' && currentUser.role === UserRole.ADMIN && (
+                <DataManagement
+                  currentState={{ companies, users, projects, tickets, comments, history, opsInfo }}
+                  onApplyState={handleApplyState}
+                />
+              )}
+            </div>
+          </main>
+        )}
       </div>
     </div>
   );

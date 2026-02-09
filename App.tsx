@@ -15,7 +15,8 @@ import {
   ChevronLeft,
   Database,
   Activity,
-  LogOut
+  LogOut,
+  Archive,
 } from 'lucide-react';
 import NavItem from './components/layout/NavItem';
 import LoadingOverlay from './components/common/LoadingOverlay';
@@ -78,11 +79,11 @@ export const defaultOrgInfo: OrganizationInfo = {
 };
 
 export const getInitialTickets = (now: Date): Ticket[] => [
-  { id: 'T-1001', title: '로그인 페이지 간헐적 튕김 현상', description: '특정 모바일 브라우저에서 로그인 시도 시 세션이 유지되지 않고 메인으로 돌아갑니다.', status: TicketStatus.WAITING, customerId: 'u4', customerName: '김고객 과장', projectId: 'p1', createdAt: addDays(now, -1).toISOString(), dueDate: addBusinessDays(now, 4).toISOString() },
-  { id: 'T-1002', title: '신규 사용자 권한 일괄 등록 요청', description: '인사 이동으로 인한 50명의 사용자 권한을 엑셀 기반으로 등록 요청합니다.', status: TicketStatus.RECEIVED, customerId: 'u5', customerName: '최협력 대리', supportId: 'u3', supportName: '박기술 엔지니어', projectId: 'p2', createdAt: addDays(now, -2).toISOString(), dueDate: addBusinessDays(now, 3).toISOString() },
-  { id: 'T-1003', title: '실시간 데이터 동기화 지연 문의', description: '어제 오후 3시부터 금융 데이터 동기화 주기가 10분 이상 지연되고 있습니다.', status: TicketStatus.IN_PROGRESS, customerId: 'u4', customerName: '김고객 과장', supportId: 'u2', supportName: '이지원 지원팀장', projectId: 'p3', plan: '서버 로그 분석 후 DB 인덱스 재구성 예정', expectedCompletionDate: addDays(now, 1).toISOString(), createdAt: addDays(now, -1).toISOString(), dueDate: addBusinessDays(now, 2).toISOString() },
-  { id: 'T-1004', title: '공공 API 인터페이스 사양 변경 대응', description: '정부 API 버전 업그레이드에 따른 연동 모듈 수정이 필요합니다.', status: TicketStatus.DELAYED, customerId: 'u4', customerName: '김고객 과장', supportId: 'u3', supportName: '박기술 엔지니어', projectId: 'p4', createdAt: addDays(now, -7).toISOString(), dueDate: addDays(now, -1).toISOString() },
-  { id: 'T-1005', title: '수요예측 대시보드 UI 레이아웃 개선', description: '사용자 피드백을 반영하여 메인 차트 크기를 키우고 필터를 상단으로 이동했습니다.', status: TicketStatus.COMPLETED, customerId: 'u5', customerName: '최협력 대리', supportId: 'u2', supportName: '이지원 지원팀장', projectId: 'p5', satisfaction: 5, completionFeedback: '요청한 대로 깔끔하게 반영되었습니다. 감사합니다!', createdAt: addDays(now, -10).toISOString(), dueDate: addDays(now, -5).toISOString() }
+  { id: 'T-1001', title: '로그인 페이지 간헐적 튕김 현상', description: '특정 모바일 브라우저에서 로그인 시도 시 세션이 유지되지 않고 메인으로 돌아갑니다.', status: TicketStatus.WAITING, customerId: 'u4', customerName: '김고객 과장', projectId: 'p1', createdAt: addDays(now, -1).toISOString(), dueDate: addBusinessDays(now, 4).toISOString(), initialDueDate: addBusinessDays(now, 4).toISOString() },
+  { id: 'T-1002', title: '신규 사용자 권한 일괄 등록 요청', description: '인사 이동으로 인한 50명의 사용자 권한을 엑셀 기반으로 등록 요청합니다.', status: TicketStatus.RECEIVED, customerId: 'u5', customerName: '최협력 대리', supportId: 'u3', supportName: '박기술 엔지니어', projectId: 'p2', createdAt: addDays(now, -2).toISOString(), dueDate: addBusinessDays(now, 3).toISOString(), initialDueDate: addBusinessDays(now, 3).toISOString() },
+  { id: 'T-1003', title: '실시간 데이터 동기화 지연 문의', description: '어제 오후 3시부터 금융 데이터 동기화 주기가 10분 이상 지연되고 있습니다.', status: TicketStatus.IN_PROGRESS, customerId: 'u4', customerName: '김고객 과장', supportId: 'u2', supportName: '이지원 지원팀장', projectId: 'p3', plan: '서버 로그 분석 후 DB 인덱스 재구성 예정', expectedCompletionDate: addDays(now, 1).toISOString(), createdAt: addDays(now, -1).toISOString(), dueDate: addBusinessDays(now, 2).toISOString(), initialDueDate: addBusinessDays(now, 2).toISOString() },
+  { id: 'T-1004', title: '공공 API 인터페이스 사양 변경 대응', description: '정부 API 버전 업그레이드에 따른 연동 모듈 수정이 필요합니다.', status: TicketStatus.DELAYED, customerId: 'u4', customerName: '김고객 과장', supportId: 'u3', supportName: '박기술 엔지니어', projectId: 'p4', createdAt: addDays(now, -7).toISOString(), dueDate: addDays(now, -1).toISOString(), initialDueDate: addDays(now, -1).toISOString() },
+  { id: 'T-1005', title: '수요예측 대시보드 UI 레이아웃 개선', description: '사용자 피드백을 반영하여 메인 차트 크기를 키우고 필터를 상단으로 이동했습니다.', status: TicketStatus.COMPLETED, customerId: 'u5', customerName: '최협력 대리', supportId: 'u2', supportName: '이지원 지원팀장', projectId: 'p5', satisfaction: 5, completionFeedback: '요청한 대로 깔끔하게 반영되었습니다. 감사합니다!', createdAt: addDays(now, -10).toISOString(), dueDate: addDays(now, -5).toISOString(), initialDueDate: addDays(now, -5).toISOString() }
 ];
 
 const App: React.FC = () => {
@@ -95,7 +96,7 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [opsInfo, setOpsInfo] = useState<OperationalInfo[]>([]);
   const [orgInfo, setOrgInfo] = useState<OrganizationInfo | undefined>(undefined);
-  const [view, setView] = useState<'list' | 'create' | 'edit' | 'detail' | 'companies' | 'users' | 'projects' | 'profile' | 'dataManagement' | 'opsManagement' | 'orgSettings'>('list');
+  const [view, setView] = useState<'list' | 'completed_list' | 'create' | 'edit' | 'detail' | 'companies' | 'users' | 'projects' | 'profile' | 'dataManagement' | 'opsManagement' | 'orgSettings'>('list');
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -332,13 +333,29 @@ const App: React.FC = () => {
     }
   }, [selectedTicketId]);
 
-  const updateTicketStatus = React.useCallback(async (ticketId: string, newStatus: TicketStatus, updates: Partial<Ticket> = {}, note?: string) => {
+  const updateTicketStatus = React.useCallback(async (ticketId: string, newStatus: TicketStatus, updates: Partial<Ticket> = {}, note?: string, action?: string) => {
     const ticket = tickets.find(t => t.id === ticketId);
     if (!ticket) return;
+
+    // Guard Clauses: Prevent reverting to WAITING or RECEIVED
+    if (newStatus === TicketStatus.WAITING && ticket.status !== TicketStatus.WAITING) {
+      console.warn('Cannot revert to WAITING status');
+      return;
+    }
+    if ((newStatus === TicketStatus.RECEIVED || newStatus === TicketStatus.RECEIVED_AUTO) &&
+      (ticket.status !== TicketStatus.WAITING && ticket.status !== TicketStatus.RECEIVED && ticket.status !== TicketStatus.RECEIVED_AUTO)) {
+      console.warn('Cannot revert to RECEIVED status from advanced states');
+      return;
+    }
+    // Prevent re-completing if already completed (unless reverting from completed, which is handled by specific logic elsewhere e.g. rejection)
+    if (newStatus === TicketStatus.COMPLETED && ticket.status === TicketStatus.COMPLETED) {
+      return;
+    }
+
     const updatedTicket = { ...ticket, ...updates, status: newStatus };
 
     setTickets(prev => prev.map(t => t.id === ticketId ? updatedTicket : t));
-    const historyEntry: HistoryEntry = { id: `h-${Date.now()}`, ticketId, status: newStatus, changedBy: currentUser.name, timestamp: new Date().toISOString(), note: note || `상태가 ${newStatus}(으)로 변경되었습니다.` };
+    const historyEntry: HistoryEntry = { id: `h-${Date.now()}`, ticketId, status: newStatus, changedBy: currentUser.name, timestamp: new Date().toISOString(), note: note || `상태가 ${newStatus}(으)로 변경되었습니다.`, action };
     setHistory(prev => [historyEntry, ...prev]);
 
     await storage.saveTicket(updatedTicket);
@@ -422,7 +439,8 @@ const App: React.FC = () => {
         </div>
         <nav className="flex-1 p-6 space-y-2 overflow-y-auto custom-scrollbar flex flex-col">
           <NavItem icon={PlusCircle} label="New Ticket" targetView="create" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
-          <NavItem icon={TicketIcon} label="티켓 관리" targetView="list" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
+          <NavItem icon={TicketIcon} label="티켓 관리(진행중)" targetView="list" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
+          <NavItem icon={Archive} label="티켓 기록(완료)" targetView="completed_list" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
           <div className="pt-8 pb-3 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">Management</div>
           <NavItem icon={Briefcase} label="프로젝트 관리" targetView="projects" currentView={view} currentUserRole={currentUser.role} onClick={changeView} supportOrAdmin />
           <NavItem icon={Activity} label="운영정보 관리" targetView="opsManagement" currentView={view} currentUserRole={currentUser.role} onClick={changeView} supportOrAdmin />
@@ -472,7 +490,8 @@ const App: React.FC = () => {
             <div className="mb-6 lg:mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                  {view === 'list' && 'Tickets Overview'}
+                  {view === 'list' && 'Active Tickets'}
+                  {view === 'completed_list' && 'Completed Tickets'}
                   {view === 'create' && 'Create New Ticket'}
                   {view === 'edit' && 'Edit Ticket'}
                   {view === 'detail' && `Ticket ${selectedTicketId}`}
@@ -490,10 +509,11 @@ const App: React.FC = () => {
             </div>
 
             <div className="relative">
-              {view === 'list' && <TicketList tickets={filteredTickets} currentUser={currentUser} onSelect={(id) => { setSelectedTicketId(id); setView('detail'); }} onEdit={(ticket) => { setEditingTicket(ticket); setView('edit'); }} onDelete={handleDeleteTicket} />}
+              {view === 'list' && <TicketList tickets={filteredTickets.filter(t => t.status !== TicketStatus.COMPLETED)} currentUser={currentUser} onSelect={(id) => { setSelectedTicketId(id); setView('detail'); }} onEdit={(ticket) => { setEditingTicket(ticket); setView('edit'); }} onDelete={handleDeleteTicket} />}
+              {view === 'completed_list' && <TicketList tickets={filteredTickets.filter(t => t.status === TicketStatus.COMPLETED)} currentUser={currentUser} onSelect={(id) => { setSelectedTicketId(id); setView('detail'); }} onEdit={(ticket) => { setEditingTicket(ticket); setView('edit'); }} onDelete={handleDeleteTicket} />}
               {view === 'create' && <TicketCreate projects={filteredProjects.filter(p => p.status === ProjectStatus.ACTIVE)} currentUser={currentUser} onSubmit={handleCreateTicket} onCancel={() => changeView('list')} />}
               {view === 'edit' && editingTicket && <TicketCreate projects={filteredProjects.filter(p => p.status === ProjectStatus.ACTIVE)} currentUser={currentUser} initialData={editingTicket} onSubmit={(data) => handleUpdateTicket(editingTicket.id, data)} onCancel={() => { setEditingTicket(null); changeView('list'); }} />}
-              {view === 'detail' && selectedTicket && <TicketDetail ticket={selectedTicket} project={projects.find(p => p.id === selectedTicket.projectId)!} users={users} history={history.filter(h => h.ticketId === selectedTicket.id)} comments={comments.filter(c => c.ticketId === selectedTicket.id)} currentUser={currentUser} onStatusUpdate={updateTicketStatus} onAddComment={addComment} onBack={() => changeView('list')} />}
+              {view === 'detail' && selectedTicket && <TicketDetail ticket={selectedTicket} project={projects.find(p => p.id === selectedTicket.projectId)!} users={users} history={history.filter(h => h.ticketId === selectedTicket.id)} comments={comments.filter(c => c.ticketId === selectedTicket.id)} currentUser={currentUser} onStatusUpdate={updateTicketStatus} onAddComment={addComment} onBack={() => changeView(selectedTicket.status === TicketStatus.COMPLETED ? 'completed_list' : 'list')} />}
               {view === 'companies' && currentUser.role === UserRole.ADMIN && (
                 <CompanyManagement
                   companies={companies}

@@ -94,6 +94,7 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
         customerId: initialData?.customerId || currentUser.id,
         customerName: initialData?.customerName || currentUser.name,
         dueDate: new Date(dueDate).toISOString(),
+        initialDueDate: new Date(dueDate).toISOString(),
         shortenedDueReason: isShortened ? dueReason : undefined,
         attachments: files.length > 0 ? files.map(f => f.name) : initialData?.attachments,
         plan: isSupport && plan ? plan : initialData?.plan,

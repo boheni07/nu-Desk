@@ -9,11 +9,12 @@ interface CommentSectionProps {
     currentUser: User;
     onAddComment: (comment: Omit<Comment, 'id' | 'timestamp'>) => void;
     ticketId: string;
+    readOnly?: boolean;
 }
 
 const ALLOWED_EXTENSIONS = ".pdf,.doc,.docx,.xlsx,.xls,.pptx,.ppt,.png,.jpg,.jpeg,.gif,.webp,.hwp,.txt";
 
-const CommentSection: React.FC<CommentSectionProps> = ({ comments, currentUser, onAddComment, ticketId }) => {
+const CommentSection: React.FC<CommentSectionProps> = ({ comments, currentUser, onAddComment, ticketId, readOnly }) => {
     const [commentText, setCommentText] = useState('');
     const [commentFiles, setCommentFiles] = useState<File[]>([]);
     const commentFileInputRef = useRef<HTMLInputElement>(null);
@@ -38,49 +39,55 @@ const CommentSection: React.FC<CommentSectionProps> = ({ comments, currentUser, 
                 의견 나누기
             </h3>
 
-            <div className="mb-6">
-                <div className="relative border border-slate-200 rounded-xl overflow-hidden focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500 transition-all bg-slate-50 shadow-inner">
-                    <textarea
-                        className="w-full px-4 py-3 outline-none text-sm resize-none min-h-[80px] bg-transparent leading-relaxed"
-                        placeholder="추가 의견이나 자료를 공유하세요..."
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                    />
-                    {commentFiles.length > 0 && (
-                        <div className="px-5 py-2 flex flex-wrap gap-2">
-                            {commentFiles.map((f, i) => (
-                                <span key={i} className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 text-[10px] font-bold text-slate-600 rounded-lg">
-                                    <span className="truncate max-w-[100px]">{f.name}</span>
-                                    <X size={12} className="cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setCommentFiles(prev => prev.filter((_, idx) => idx !== i))} />
-                                </span>
-                            ))}
+            {!readOnly ? (
+                <div className="mb-6">
+                    <div className="relative border border-slate-200 rounded-xl overflow-hidden focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500 transition-all bg-slate-50 shadow-inner">
+                        <textarea
+                            className="w-full px-4 py-3 outline-none text-sm resize-none min-h-[80px] bg-transparent leading-relaxed"
+                            placeholder="추가 의견이나 자료를 공유하세요..."
+                            value={commentText}
+                            onChange={(e) => setCommentText(e.target.value)}
+                        />
+                        {commentFiles.length > 0 && (
+                            <div className="px-5 py-2 flex flex-wrap gap-2">
+                                {commentFiles.map((f, i) => (
+                                    <span key={i} className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 text-[10px] font-bold text-slate-600 rounded-lg">
+                                        <span className="truncate max-w-[100px]">{f.name}</span>
+                                        <X size={12} className="cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setCommentFiles(prev => prev.filter((_, idx) => idx !== i))} />
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                        <div className="p-3 bg-white border-t border-slate-100 flex justify-between items-center">
+                            <button
+                                onClick={() => commentFileInputRef.current?.click()}
+                                className="p-2.5 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors flex items-center gap-2"
+                            >
+                                <Paperclip size={20} />
+                                <span className="text-[10px] font-black uppercase text-slate-400 hidden sm:inline">Attach</span>
+                                <input
+                                    type="file"
+                                    multiple
+                                    accept={ALLOWED_EXTENSIONS}
+                                    className="hidden"
+                                    ref={commentFileInputRef}
+                                    onChange={(e) => e.target.files && setCommentFiles(prev => [...prev, ...Array.from(e.target.files!)])}
+                                />
+                            </button>
+                            <button
+                                onClick={handleAddComment}
+                                className="px-8 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-black flex items-center gap-2 hover:bg-blue-700 shadow-lg active:scale-95 transition-all"
+                            >
+                                <Send size={16} /> 전송
+                            </button>
                         </div>
-                    )}
-                    <div className="p-3 bg-white border-t border-slate-100 flex justify-between items-center">
-                        <button
-                            onClick={() => commentFileInputRef.current?.click()}
-                            className="p-2.5 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors flex items-center gap-2"
-                        >
-                            <Paperclip size={20} />
-                            <span className="text-[10px] font-black uppercase text-slate-400 hidden sm:inline">Attach</span>
-                            <input
-                                type="file"
-                                multiple
-                                accept={ALLOWED_EXTENSIONS}
-                                className="hidden"
-                                ref={commentFileInputRef}
-                                onChange={(e) => e.target.files && setCommentFiles(prev => [...prev, ...Array.from(e.target.files!)])}
-                            />
-                        </button>
-                        <button
-                            onClick={handleAddComment}
-                            className="px-8 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-black flex items-center gap-2 hover:bg-blue-700 shadow-lg active:scale-95 transition-all"
-                        >
-                            <Send size={16} /> 전송
-                        </button>
                     </div>
                 </div>
-            </div>
+            ) : (
+                <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                    <p className="text-sm font-bold text-slate-400">티켓이 완료되어 더 이상 의견을 나눌 수 없습니다.</p>
+                </div>
+            )}
 
             <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                 {comments.map((c) => {

@@ -35,7 +35,7 @@ const ActivityHistory: React.FC<ActivityHistoryProps> = ({ history }) => {
 
                         <div className="flex items-center gap-2.5 transition-all text-[10px] font-black leading-none py-1">
                             <span className={`px-2 py-0.5 rounded text-[9px] uppercase tracking-wide shrink-0 ${i === 0 ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                                {h.status}
+                                {h.action || h.status}
                             </span>
                             <span className="text-slate-300 truncate max-w-[80px]">{h.changedBy}</span>
                             <span className="text-slate-500 font-mono tracking-tighter shrink-0">{format(new Date(h.timestamp), 'yyyy-MM-dd HH:mm')}</span>

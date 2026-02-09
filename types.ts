@@ -94,6 +94,7 @@ export interface HistoryEntry {
   changedBy: string;
   timestamp: string;
   note?: string;
+  action?: string;
 }
 
 export interface Ticket {
@@ -109,6 +110,7 @@ export interface Ticket {
   projectId: string;
   createdAt: string;
   dueDate: string;
+  initialDueDate?: string;
   shortenedDueReason?: string;
   postponeReason?: string;
   postponeDate?: string;

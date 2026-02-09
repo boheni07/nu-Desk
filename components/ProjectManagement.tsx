@@ -42,7 +42,8 @@ const ProjectManagement: React.FC<Props> = ({ projects, companies, users, curren
     p.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const supportUsers = users.filter(u => u.role === UserRole.SUPPORT_LEAD || u.role === UserRole.SUPPORT_STAFF);
+  // Explicitly exclude ADMIN role from being selectable as Support Staff
+  const supportUsers = users.filter(u => u.role !== UserRole.ADMIN && (u.role === UserRole.SUPPORT_LEAD || u.role === UserRole.SUPPORT_STAFF));
   const customerUsersOfSelectedClient = users.filter(u => u.role === UserRole.CUSTOMER && u.companyId === formData.clientId);
 
   const handleOpenAddModal = () => {
@@ -85,6 +86,17 @@ const ProjectManagement: React.FC<Props> = ({ projects, companies, users, curren
     }
     if (formData.supportStaffIds.length === 0) {
       alert('최소 1명의 지원담당자가 필요합니다. (첫 번째 선택자가 PM) ');
+      return;
+    }
+
+    // Verify no Admin users are in the support list (Server-side validation equivalent)
+    const hasAdminInSupport = formData.supportStaffIds.some(id => {
+      const u = users.find(user => user.id === id);
+      return u && u.role === UserRole.ADMIN;
+    });
+
+    if (hasAdminInSupport) {
+      alert('관리자(ADMIN) 권한을 가진 사용자는 지원 인력으로 지정할 수 없습니다.');
       return;
     }
 

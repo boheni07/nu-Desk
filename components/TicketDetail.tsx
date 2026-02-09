@@ -65,7 +65,7 @@ const TicketDetail: React.FC<Props> = ({
   const [postponeDate, setPostponeDate] = useState('');
   const [postponeReason, setPostponeReason] = useState('');
   const [rejectReason, setRejectReason] = useState('');
-  const [satisfaction, setSatisfaction] = useState(5);
+  const [satisfaction, setSatisfaction] = useState(3);
   const [completionFeedback, setCompletionFeedback] = useState('');
 
   useEffect(() => {
@@ -198,10 +198,8 @@ const TicketDetail: React.FC<Props> = ({
                 <div className="text-sm sm:text-base text-slate-600 whitespace-pre-wrap leading-relaxed break-words font-medium">
                   {ticket.description}
                 </div>
-                <div className="mt-6 pt-6 border-t border-slate-50 flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Processing Deadline</span>
-                  </div>
+                <div className="mt-8 pt-6 border-t border-slate-50 flex justify-between items-center">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Processing Deadline</span>
                   <span className={`text-sm font-black ${isDelayed ? 'text-rose-600' : 'text-slate-600'}`}>
                     {format(new Date(ticket.dueDate), 'yyyy-MM-dd')}
                   </span>
@@ -239,11 +237,11 @@ const TicketDetail: React.FC<Props> = ({
                       ))}
                     </div>
                   )}
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center px-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Completion ETA</span>
-                      <span className="text-sm font-black text-blue-600">{format(new Date(ticket.expectedCompletionDate!), 'yyyy-MM-dd')}</span>
-                    </div>
+                  <div className="mt-8 pt-6 border-t border-slate-100/50 flex justify-between items-center">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Completion ETA</span>
+                    <span className="text-sm font-black text-blue-600">
+                      {format(new Date(ticket.expectedCompletionDate!), 'yyyy-MM-dd')}
+                    </span>
                   </div>
                 </div>
               ) : currentUser.role === UserRole.SUPPORT ? (
@@ -359,15 +357,14 @@ const TicketDetail: React.FC<Props> = ({
               <div className="space-y-3">
                 <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Client Contact</p>
                 {clientContacts.length > 0 ? clientContacts.map(u => (
-                  <div key={u.id} className="space-y-1.5 pl-3 border-l-2 border-blue-100">
-                    <div className="flex items-center gap-2 text-sm font-black text-slate-800">
-                      <UserIcon size={12} className="text-slate-400" /> {u.name}
+                  <div key={u.id} className="space-y-0.5 pl-2.5 border-l-2 border-blue-100">
+                    <div className="flex items-center gap-2 text-[13px] font-black text-slate-800">
+                      <UserIcon size={11} className="text-slate-400" /> {u.name}
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
-                      <Phone size={11} className="text-slate-300" /> {u.mobile || u.phone || '-'}
-                    </div>
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
-                      <Mail size={11} className="text-slate-300" /> {u.email || '-'}
+                    <div className="flex flex-wrap items-center gap-x-2 text-[10px] font-bold text-slate-500">
+                      <span className="flex items-center gap-1"><Phone size={10} className="text-slate-300" /> {u.mobile || u.phone || '-'}</span>
+                      <span className="text-slate-200">|</span>
+                      <span className="flex items-center gap-1"><Mail size={10} className="text-slate-300" /> {u.email || '-'}</span>
                     </div>
                   </div>
                 )) : (
@@ -385,16 +382,15 @@ const TicketDetail: React.FC<Props> = ({
             </h3>
             <div className="space-y-4">
               {supportStaff.length > 0 ? supportStaff.map(u => (
-                <div key={u.id} className="space-y-1.5 pl-3 border-l-2 border-indigo-100">
-                  <div className="flex items-center gap-2 text-sm font-black text-slate-800">
-                    <div className="w-5 h-5 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-black mr-1">{u.name[0]}</div>
+                <div key={u.id} className="space-y-0.5 pl-2.5 border-l-2 border-indigo-100">
+                  <div className="flex items-center gap-2 text-[13px] font-black text-slate-800">
+                    <div className="w-4 h-4 rounded bg-indigo-100 text-indigo-700 flex items-center justify-center text-[9px] font-black mr-0.5">{u.name[0]}</div>
                     {u.name}
                   </div>
-                  <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
-                    <Phone size={11} className="text-slate-300" /> {u.mobile || u.phone || '-'}
-                  </div>
-                  <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
-                    <Mail size={11} className="text-slate-300" /> {u.email || '-'}
+                  <div className="flex flex-wrap items-center gap-x-2 text-[10px] font-bold text-slate-500">
+                    <span className="flex items-center gap-1"><Phone size={10} className="text-slate-300" /> {u.mobile || u.phone || '-'}</span>
+                    <span className="text-slate-200">|</span>
+                    <span className="flex items-center gap-1"><Mail size={10} className="text-slate-300" /> {u.email || '-'}</span>
                   </div>
                 </div>
               )) : (

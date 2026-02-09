@@ -32,16 +32,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({ comments, currentUser, 
     };
 
     return (
-        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-6 sm:p-10 overflow-hidden">
-            <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center gap-3">
-                <div className="p-2 bg-blue-600 rounded-xl text-white shadow-lg"><MessageSquare size={20} /></div>
+        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-6 overflow-hidden">
+            <h3 className="text-base font-black text-slate-900 mb-6 flex items-center gap-3">
+                <div className="p-1.5 bg-blue-600 rounded-lg text-white shadow-lg"><MessageSquare size={16} /></div>
                 의견 나누기
             </h3>
 
-            <div className="mb-10">
-                <div className="relative border border-slate-200 rounded-2xl overflow-hidden focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500 transition-all bg-slate-50 shadow-inner">
+            <div className="mb-6">
+                <div className="relative border border-slate-200 rounded-xl overflow-hidden focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500 transition-all bg-slate-50 shadow-inner">
                     <textarea
-                        className="w-full px-5 py-4 outline-none text-sm resize-none min-h-[100px] bg-transparent leading-relaxed"
+                        className="w-full px-4 py-3 outline-none text-sm resize-none min-h-[80px] bg-transparent leading-relaxed"
                         placeholder="추가 의견이나 자료를 공유하세요..."
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
@@ -82,7 +82,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ comments, currentUser, 
                 </div>
             </div>
 
-            <div className="space-y-8 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                 {comments.map((c) => {
                     const isMine = c.authorId === currentUser.id;
                     return (
@@ -92,7 +92,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ comments, currentUser, 
                                     <span className="text-[11px] font-black text-slate-900">{c.authorName}</span>
                                     <span className="text-[9px] text-slate-400 font-bold uppercase">{formatDate(c.timestamp)}</span>
                                 </div>
-                                <div className={`px-5 py-3.5 rounded-2xl text-sm font-medium leading-relaxed border shadow-sm break-words ${isMine ? 'bg-blue-600 border-blue-500 text-white rounded-br-none' : 'bg-white border-slate-200 text-slate-700 rounded-tl-none'}`}>
+                                <div className={`px-4 py-2.5 rounded-xl text-sm font-medium leading-relaxed border shadow-sm break-words ${isMine ? 'bg-blue-600 border-blue-500 text-white rounded-br-none' : 'bg-white border-slate-200 text-slate-700 rounded-tl-none'}`}>
                                     {c.content}
                                     {c.attachments && c.attachments.length > 0 && (
                                         <div className={`mt-3 pt-3 border-t ${isMine ? 'border-white/20' : 'border-slate-100'} flex flex-wrap gap-2`}>

@@ -33,13 +33,13 @@ const Modal: React.FC<ModalProps> = ({
             <div className="px-10 pb-12 pt-6 flex flex-col sm:flex-row gap-4 shrink-0">
                 <button
                     onClick={onClose}
-                    className="flex-1 px-8 py-4.5 text-slate-500 font-black hover:bg-slate-50 rounded-2xl transition-all uppercase text-xs"
+                    className="flex-1 px-8 py-4 text-slate-500 font-black hover:bg-slate-50 rounded-2xl transition-all uppercase text-sm"
                 >
                     취소
                 </button>
                 <button
                     onClick={onConfirm}
-                    className={`flex-1 px-8 py-4.5 ${confirmColor} text-white font-black rounded-2xl shadow-xl transition-all active:scale-95 uppercase text-xs tracking-widest`}
+                    className={`flex-1 px-8 py-4 ${confirmColor} text-white font-black rounded-2xl shadow-xl transition-all active:scale-95 uppercase text-sm tracking-widest`}
                 >
                     {confirmText}
                 </button>

@@ -266,14 +266,53 @@ const TicketDetail: React.FC<Props> = ({
               </div>
             )}
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              {currentUser.role === UserRole.SUPPORT && ticket.status === TicketStatus.IN_PROGRESS && (
-                <><button disabled={isDelayed} onClick={() => setShowPostponeModal(true)} className={`px-8 py-3.5 rounded-2xl font-black text-sm border ${isDelayed ? 'bg-slate-800 text-slate-600' : 'bg-slate-800 text-orange-400 hover:bg-slate-700'}`}>연기 요청</button><button onClick={() => setShowCompleteModal(true)} className="px-10 py-3.5 bg-emerald-600 text-white rounded-2xl font-black text-sm hover:bg-emerald-700 shadow-xl shadow-emerald-900/40">완료 보고</button></>
+              {(currentUser.role === UserRole.SUPPORT && (ticket.status === TicketStatus.IN_PROGRESS || ticket.status === TicketStatus.DELAYED)) && (
+                <>
+                  <button
+                    onClick={() => setShowPostponeModal(true)}
+                    className="px-8 py-4 bg-slate-800 text-orange-400 rounded-2xl font-black text-sm hover:bg-slate-700 border border-slate-700 transition-all"
+                  >
+                    연기 요청
+                  </button>
+                  <button
+                    onClick={() => setShowCompleteModal(true)}
+                    className="px-10 py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm hover:bg-emerald-700 shadow-xl shadow-emerald-900/40 transition-all"
+                  >
+                    완료 보고
+                  </button>
+                </>
               )}
               {currentUser.role === UserRole.CUSTOMER && ticket.status === TicketStatus.POSTPONE_REQUESTED && (
-                <><button onClick={() => setShowRejectModal(true)} className="px-8 py-3.5 bg-slate-800 text-rose-400 rounded-2xl font-black text-sm hover:bg-slate-700">연기 거절</button><button onClick={handleApprovePostpone} className="px-10 py-3.5 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 shadow-xl shadow-blue-900/40">연기 승인</button></>
+                <>
+                  <button
+                    onClick={() => setShowRejectModal(true)}
+                    className="px-8 py-4 bg-slate-800 text-rose-400 rounded-2xl font-black text-sm hover:bg-slate-700 transition-all"
+                  >
+                    연기 거절
+                  </button>
+                  <button
+                    onClick={handleApprovePostpone}
+                    className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 shadow-xl shadow-blue-900/40 transition-all"
+                  >
+                    연기 승인
+                  </button>
+                </>
               )}
               {currentUser.role === UserRole.CUSTOMER && ticket.status === TicketStatus.COMPLETION_REQUESTED && (
-                <><button onClick={() => setShowRejectCompleteModal(true)} className="px-8 py-3.5 bg-slate-800 text-rose-400 rounded-2xl font-black text-sm hover:bg-slate-700">보완 요청</button><button onClick={() => setShowFinalizeModal(true)} className="px-12 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 shadow-xl shadow-blue-900/40">최종 승인</button></>
+                <>
+                  <button
+                    onClick={() => setShowRejectCompleteModal(true)}
+                    className="px-8 py-4 bg-slate-800 text-rose-400 rounded-2xl font-black text-sm hover:bg-slate-700 transition-all"
+                  >
+                    보완 요청
+                  </button>
+                  <button
+                    onClick={() => setShowFinalizeModal(true)}
+                    className="px-12 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 shadow-xl shadow-blue-900/40 transition-all"
+                  >
+                    최종 승인
+                  </button>
+                </>
               )}
             </div>
           </div>

@@ -27,7 +27,9 @@ export const HardwareForm = ({ initialData, onSave }: any) => {
             </div>
             <div><label className="text-[10px] text-slate-400 ml-1 uppercase">비고</label>
                 <textarea className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none min-h-[80px]" value={data.remarks} onChange={e => setData({ ...data, remarks: e.target.value })} /></div>
-            <button onClick={() => onSave(data)} className="w-full py-3.5 bg-blue-600 text-white rounded-xl flex items-center justify-center gap-2 mt-2 font-black shadow-lg shadow-blue-100"><Save size={16} /> 저장하기</button>
+            <button onClick={() => onSave(data)} className="w-full py-4 bg-blue-600 text-white rounded-xl flex items-center justify-center gap-2 mt-4 font-black shadow-lg shadow-blue-100 text-sm">
+                <Save size={16} /> 저장하기
+            </button>
         </div>
     );
 };
@@ -48,7 +50,9 @@ export const SoftwareForm = ({ initialData, onSave }: any) => {
                 <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.installPath} onChange={e => setData({ ...data, installPath: e.target.value })} /></div>
             <div><label className="text-[10px] text-slate-400 ml-1 uppercase">기술지원</label>
                 <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.techSupport} onChange={e => setData({ ...data, techSupport: e.target.value })} /></div>
-            <button onClick={() => onSave(data)} className="w-full py-3.5 bg-emerald-600 text-white rounded-xl flex items-center justify-center gap-2 mt-2 font-black shadow-lg shadow-emerald-100"><Save size={16} /> 저장하기</button>
+            <button onClick={() => onSave(data)} className="w-full py-4 bg-emerald-600 text-white rounded-xl flex items-center justify-center gap-2 mt-4 font-black shadow-lg shadow-emerald-100 text-sm">
+                <Save size={16} /> 저장하기
+            </button>
         </div>
     );
 };
@@ -77,7 +81,9 @@ export const AccessForm = ({ initialData, onSave }: any) => {
             </div>
             <div><label className="text-[10px] text-slate-400 ml-1 uppercase">비고</label>
                 <textarea className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none min-h-[80px]" value={data.remarks} onChange={e => setData({ ...data, remarks: e.target.value })} /></div>
-            <button onClick={() => onSave(data)} className="w-full py-3.5 bg-amber-600 text-white rounded-xl flex items-center justify-center gap-2 mt-2 font-black shadow-lg shadow-amber-100"><Save size={16} /> 저장하기</button>
+            <button onClick={() => onSave(data)} className="w-full py-4 bg-amber-600 text-white rounded-xl flex items-center justify-center gap-2 mt-4 font-black shadow-lg shadow-amber-100 text-sm">
+                <Save size={16} /> 저장하기
+            </button>
         </div>
     );
 };

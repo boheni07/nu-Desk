@@ -15,6 +15,9 @@ import {
   CalendarDays,
   AlertTriangle,
   CheckCircle,
+  Mail,
+  Phone,
+  User as UserIcon
 } from 'lucide-react';
 import Modal from './common/Modal';
 import StatusBadge from './common/StatusBadge';
@@ -97,6 +100,10 @@ const TicketDetail: React.FC<Props> = ({
   const supportStaff = useMemo(() => {
     return project.supportStaffIds.map(id => users.find(u => u.id === id)).filter(Boolean) as User[];
   }, [project.supportStaffIds, users]);
+
+  const clientContacts = useMemo(() => {
+    return project.customerContactIds.map(id => users.find(u => u.id === id)).filter(Boolean) as User[];
+  }, [project.customerContactIds, users]);
 
   const handleRegisterPlan = () => {
     if (!planText) { alert('처리 계획을 입력해주세요.'); return; }
@@ -338,23 +345,61 @@ const TicketDetail: React.FC<Props> = ({
       </div>
 
       <div className="lg:col-span-4 space-y-6">
-        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-8 space-y-8">
+        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-6 space-y-6">
           <section>
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2.5"><Briefcase size={14} className="text-blue-500" /> Project Detail</h3>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2.5">
+              <Briefcase size={14} className="text-blue-500" /> Project Detail
+            </h3>
             <div className="space-y-4">
-              <div><p className="text-[10px] text-slate-400 font-black uppercase mb-1">Name</p><p className="text-lg font-black text-slate-900 leading-tight">{project.name}</p></div>
+              <div>
+                <p className="text-[10px] text-slate-400 font-black uppercase mb-1">Project Name</p>
+                <p className="text-base font-black text-slate-900 leading-tight">{project.name}</p>
+              </div>
+              <div className="h-px bg-slate-50" />
+              <div className="space-y-3">
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Client Contact</p>
+                {clientContacts.length > 0 ? clientContacts.map(u => (
+                  <div key={u.id} className="space-y-1.5 pl-3 border-l-2 border-blue-100">
+                    <div className="flex items-center gap-2 text-sm font-black text-slate-800">
+                      <UserIcon size={12} className="text-slate-400" /> {u.name}
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+                      <Phone size={11} className="text-slate-300" /> {u.mobile || u.phone || '-'}
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+                      <Mail size={11} className="text-slate-300" /> {u.email || '-'}
+                    </div>
+                  </div>
+                )) : (
+                  <p className="text-[11px] text-slate-400 italic">등록된 담당자가 없습니다.</p>
+                )}
+              </div>
             </div>
           </section>
+
           <div className="h-px bg-slate-100" />
+
           <section>
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2.5"><Shield size={14} className="text-indigo-500" /> Support Team</h3>
-            <div className="space-y-3">
-              {supportStaff.map((u, idx) => (
-                <div key={u.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm">{u.name[0]}</div>
-                  <div className="min-w-0 flex-1"><p className="text-sm font-black text-slate-800 truncate">{u.name}</p></div>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2.5">
+              <Shield size={14} className="text-indigo-500" /> Support Team
+            </h3>
+            <div className="space-y-4">
+              {supportStaff.length > 0 ? supportStaff.map(u => (
+                <div key={u.id} className="space-y-1.5 pl-3 border-l-2 border-indigo-100">
+                  <div className="flex items-center gap-2 text-sm font-black text-slate-800">
+                    <div className="w-5 h-5 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-black mr-1">{u.name[0]}</div>
+                    {u.name}
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+                    <Phone size={11} className="text-slate-300" /> {u.mobile || u.phone || '-'}
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+                    <Mail size={11} className="text-slate-300" /> {u.email || '-'}
+                  </div>
                 </div>
-              ))}
+              )) : (
+                <p className="text-[11px] text-slate-400 italic">배정된 담당자가 없습니다.</p>
+              )}
             </div>
           </section>
         </div>

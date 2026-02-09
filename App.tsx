@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { UserRole, Ticket, TicketStatus, User, Project, Company, Comment, HistoryEntry, ProjectStatus, UserStatus, CompanyStatus, IntakeMethod, OperationalInfo, AppState } from './types';
-import { addBusinessDays, isOverdue } from './utils';
+import { isAfter } from 'date-fns';
+import { UserRole, Ticket, TicketStatus, User, Project, Company, Comment, HistoryEntry, ProjectStatus, UserStatus, CompanyStatus, IntakeMethod, OperationalInfo, AppState, OrganizationInfo } from './types';
+import { addBusinessDays, isOverdue, addBusinessHours } from './utils';
 import {
   PlusCircle,
   Building2,
@@ -13,7 +14,8 @@ import {
   X,
   ChevronLeft,
   Database,
-  Activity
+  Activity,
+  LogOut
 } from 'lucide-react';
 import NavItem from './components/layout/NavItem';
 import LoadingOverlay from './components/common/LoadingOverlay';
@@ -27,6 +29,8 @@ import ProjectManagement from './components/ProjectManagement';
 import ProfileEdit from './components/ProfileEdit';
 import DataManagement from './components/DataManagement';
 import OperationalManagement from './components/OperationalManagement';
+import OrganizationSettings from './components/OrganizationSettings';
+import Login from './components/auth/Login';
 import * as storage from './lib/storage';
 
 // 1. Initial Sample Companies
@@ -41,8 +45,8 @@ export const initialCompanies: Company[] = [
 // 2. Initial Sample Users
 export const initialUsers: User[] = [
   { id: 'u1', loginId: 'admin1', password: 'password123', name: '홍길동 관리자', role: UserRole.ADMIN, status: UserStatus.ACTIVE, mobile: '010-1111-2222', email: 'admin@nu.com' },
-  { id: 'u2', loginId: 'support1', password: 'password123', name: '이지원 지원팀장', role: UserRole.SUPPORT, status: UserStatus.ACTIVE, mobile: '010-3333-4444', email: 'support1@nu.com' },
-  { id: 'u3', loginId: 'support2', password: 'password123', name: '박기술 엔지니어', role: UserRole.SUPPORT, status: UserStatus.ACTIVE, mobile: '010-7777-8888', email: 'support2@nu.com' },
+  { id: 'u2', loginId: 'support1', password: 'password123', name: '이지원 지원팀장', role: UserRole.SUPPORT_LEAD, status: UserStatus.ACTIVE, department: '기술지원1팀', mobile: '010-3333-4444', email: 'support1@nu.com' },
+  { id: 'u3', loginId: 'support2', password: 'password123', name: '박기술 엔지니어', role: UserRole.SUPPORT_STAFF, status: UserStatus.ACTIVE, department: '기술지원1팀', mobile: '010-7777-8888', email: 'support2@nu.com' },
   { id: 'u4', loginId: 'customer1', password: 'password123', name: '김고객 과장', role: UserRole.CUSTOMER, status: UserStatus.ACTIVE, companyId: 'c2', phone: '02-123-4567', mobile: '010-5555-6666', email: 'customer1@mirai.com' },
   { id: 'u5', loginId: 'customer2', password: 'password123', name: '최협력 대리', role: UserRole.CUSTOMER, status: UserStatus.ACTIVE, companyId: 'c3', phone: '051-987-6543', mobile: '010-9999-0000', email: 'customer2@global.com' },
 ];
@@ -51,10 +55,27 @@ export const initialUsers: User[] = [
 export const initialProjects: Project[] = [
   { id: 'p1', name: 'ERP 시스템 고도화', clientId: 'c2', customerContactIds: ['u4'], supportStaffIds: ['u2', 'u3'], description: '기존 ERP 성능 향상 및 모바일 대응', startDate: '2024-01-01', endDate: '2024-12-31', status: ProjectStatus.ACTIVE },
   { id: 'p2', name: '클라우드 마이그레이션', clientId: 'c3', customerContactIds: ['u5'], supportStaffIds: ['u3'], description: '온프레미스 서버의 AWS 전환', startDate: '2024-03-01', endDate: '2024-09-30', status: ProjectStatus.ACTIVE },
-  { id: 'p3', name: '차세대 뱅킹 보안 강화', clientId: 'c4', customerContactIds: [], supportStaffIds: ['u1', 'u2'], description: '금융권 보안 가이드라인 준수 작업', startDate: '2024-05-15', endDate: '2025-05-14', status: ProjectStatus.ACTIVE },
+  { id: 'p3', name: '차세대 뱅킹 보안 강화', clientId: 'c4', customerContactIds: [], supportStaffIds: ['u2'], description: '금융권 보안 가이드라인 준수 작업', startDate: '2024-05-15', endDate: '2025-05-14', status: ProjectStatus.ACTIVE },
   { id: 'p4', name: '대시보드 모바일화', clientId: 'c5', customerContactIds: [], supportStaffIds: ['u2'], description: '공공 데이터 시각화 앱 개발', startDate: '2024-02-01', endDate: '2024-06-30', status: ProjectStatus.ACTIVE },
-  { id: 'p5', name: 'AI 기반 수요예측 시스템', clientId: 'c2', customerContactIds: ['u4'], supportStaffIds: ['u1', 'u3'], description: '제조 공정 최적화를 위한 AI 도입', startDate: '2024-06-01', endDate: '2024-11-30', status: ProjectStatus.ACTIVE },
+  { id: 'p5', name: 'AI 기반 수요예측 시스템', clientId: 'c2', customerContactIds: ['u4'], supportStaffIds: ['u3'], description: '제조 공정 최적화를 위한 AI 도입', startDate: '2024-06-01', endDate: '2024-11-30', status: ProjectStatus.ACTIVE },
 ];
+
+export const defaultOrgInfo: OrganizationInfo = {
+  nameKo: '누테크놀로지',
+  nameEn: 'NU Technology',
+  representative: '홍길동',
+  bizNumber: '000-00-00000',
+  bizType: '서비스',
+  bizCategory: '소프트웨어 개발',
+  zipCode: '00000',
+  address: '서울시 강남구',
+  phone: '02-000-0000',
+  email: 'info@nu.com',
+  supportTeam1: '기술지원1팀',
+  supportTeam2: '기술지원2팀',
+  supportTeam3: '고객지원팀',
+  remarks: ''
+};
 
 export const getInitialTickets = (now: Date): Ticket[] => [
   { id: 'T-1001', title: '로그인 페이지 간헐적 튕김 현상', description: '특정 모바일 브라우저에서 로그인 시도 시 세션이 유지되지 않고 메인으로 돌아갑니다.', status: TicketStatus.WAITING, customerId: 'u4', customerName: '김고객 과장', projectId: 'p1', createdAt: addDays(now, -1).toISOString(), dueDate: addBusinessDays(now, 4).toISOString() },
@@ -73,11 +94,13 @@ const App: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [opsInfo, setOpsInfo] = useState<OperationalInfo[]>([]);
-  const [view, setView] = useState<'list' | 'create' | 'edit' | 'detail' | 'companies' | 'users' | 'projects' | 'profile' | 'dataManagement' | 'opsManagement'>('list');
+  const [orgInfo, setOrgInfo] = useState<OrganizationInfo | undefined>(undefined);
+  const [view, setView] = useState<'list' | 'create' | 'edit' | 'detail' | 'companies' | 'users' | 'projects' | 'profile' | 'dataManagement' | 'opsManagement' | 'orgSettings'>('list');
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // 1. 초기 데이터 로드 (Supabase 관계형)
   useEffect(() => {
@@ -95,14 +118,16 @@ const App: React.FC = () => {
             savedTickets,
             savedComments,
             savedHistory,
-            savedOpsInfo
+            savedOpsInfo,
+            savedOrgInfo
           ] = await Promise.all([
             storage.fetchCompanies().catch(() => []),
             storage.fetchProjects().catch(() => []),
             storage.fetchTickets().catch(() => []),
             storage.fetchComments().catch(() => []),
             storage.fetchHistory().catch(() => []),
-            storage.fetchAllOpsInfo().catch(() => [])
+            storage.fetchAllOpsInfo().catch(() => []),
+            storage.fetchOrganizationInfo().catch(() => undefined)
           ]);
 
           setCompanies(savedCompanies);
@@ -112,8 +137,22 @@ const App: React.FC = () => {
           setComments(savedComments);
           setHistory(savedHistory);
           setOpsInfo(savedOpsInfo);
-          const admin = savedUsers.find(u => u.role === UserRole.ADMIN) || savedUsers[0];
-          setCurrentUser(admin);
+          setOrgInfo(savedOrgInfo || defaultOrgInfo);
+
+          // 세션 체크 (localStorage)
+          const savedSession = localStorage.getItem('nu_session');
+          if (savedSession) {
+            const session = JSON.parse(savedSession);
+            const user = savedUsers.find(u => u.id === session.userId);
+            if (user) {
+              setCurrentUser(user);
+              setIsLoggedIn(true);
+            }
+          } else {
+            // 기본값 설정 (로그인이 안 된 상태면 setCurrentUser는 dummy 나 초기 로드용으로만)
+            const admin = savedUsers.find(u => u.role === UserRole.ADMIN) || savedUsers[0];
+            setCurrentUser(admin);
+          }
         } else {
           // 데이터가 없으면 샘플 데이터 시딩
           console.log('초기 데이터가 없어 시딩을 시작합니다...');
@@ -157,18 +196,31 @@ const App: React.FC = () => {
         isOverdue(t.dueDate)
       );
 
-      if (overdueTickets.length > 0) {
+      const autoReceiveTickets = tickets.filter(t =>
+        t.status === TicketStatus.WAITING &&
+        isAfter(new Date(), addBusinessHours(new Date(t.createdAt), 4))
+      );
+
+      if (overdueTickets.length > 0 || autoReceiveTickets.length > 0) {
         setTickets(prev => prev.map(t => {
+          // 1. Overdue Check
           if (t.status !== TicketStatus.COMPLETED && t.status !== TicketStatus.DELAYED && isOverdue(t.dueDate)) {
             return { ...t, status: TicketStatus.DELAYED };
+          }
+          // 2. Auto Receive Check (4 Business Hours)
+          if (t.status === TicketStatus.WAITING && isAfter(new Date(), addBusinessHours(new Date(t.createdAt), 4))) {
+            return { ...t, status: TicketStatus.RECEIVED_AUTO };
           }
           return t;
         }));
 
+        // Add history entries
         for (const t of overdueTickets) {
-          const updatedTicket = { ...t, status: TicketStatus.DELAYED };
           const historyEntry: HistoryEntry = { id: `h-${Date.now()}-${t.id}`, ticketId: t.id, status: TicketStatus.DELAYED, changedBy: 'System', timestamp: new Date().toISOString(), note: '기한 도과로 인해 상태가 지연(DELAYED)으로 자동 변경되었습니다.' };
-          await storage.saveTicket(updatedTicket);
+          await storage.saveHistoryEntry(historyEntry);
+        }
+        for (const t of autoReceiveTickets) {
+          const historyEntry: HistoryEntry = { id: `h-${Date.now()}-${t.id}`, ticketId: t.id, status: TicketStatus.RECEIVED_AUTO, changedBy: 'System', timestamp: new Date().toISOString(), note: '접수 대기 4근무시간 경과로 인해 상태가 접수(자동)으로 변경되었습니다.' };
           await storage.saveHistoryEntry(historyEntry);
         }
       }
@@ -179,11 +231,27 @@ const App: React.FC = () => {
   // PERMISSION FILTERING
   const filteredProjects = useMemo(() => {
     if (currentUser.role === UserRole.ADMIN) return projects;
-    if (currentUser.role === UserRole.SUPPORT) {
+
+    if (currentUser.role === UserRole.SUPPORT_LEAD) {
+      // 본인 및 부서원의 ID 리스트 확보
+      const teamUserIds = users
+        .filter(u =>
+          u.id === currentUser.id ||
+          (currentUser.department && u.department === currentUser.department)
+        )
+        .map(u => u.id);
+
+      // 본인이 배정되었거나 부서원이 배정된 프로젝트 필터링
+      return projects.filter(p => p.supportStaffIds.some(id => teamUserIds.includes(id)));
+    }
+
+    if (currentUser.role === UserRole.SUPPORT_STAFF) {
       return projects.filter(p => p.supportStaffIds.includes(currentUser.id));
     }
+
+    // 고객사는 본인이 담당자로 등록된 프로젝트만 조회
     return projects.filter(p => p.customerContactIds.includes(currentUser.id));
-  }, [projects, currentUser]);
+  }, [projects, users, currentUser]);
 
   const filteredTickets = useMemo(() => {
     if (currentUser.role === UserRole.ADMIN) return tickets;
@@ -200,6 +268,19 @@ const App: React.FC = () => {
     setIsSidebarOpen(false);
   }, []);
 
+  const handleLogin = (user: User) => {
+    setCurrentUser(user);
+    setIsLoggedIn(true);
+    localStorage.setItem('nu_session', JSON.stringify({ userId: user.id, timestamp: new Date().toISOString() }));
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('nu_session');
+    setView('list');
+    setIsSidebarOpen(false);
+  };
+
   // HANDLERS
   const handleCreateTicket = React.useCallback(async (newTicket: Omit<Ticket, 'id' | 'createdAt' | 'status'>) => {
     const project = projects.find(p => p.id === newTicket.projectId);
@@ -209,7 +290,7 @@ const App: React.FC = () => {
       ...newTicket,
       id: `T-${Math.floor(Math.random() * 9000) + 1000}`,
       createdAt: new Date().toISOString(),
-      status: currentUser.role === UserRole.CUSTOMER ? TicketStatus.WAITING : TicketStatus.RECEIVED,
+      status: currentUser.role === UserRole.CUSTOMER ? TicketStatus.WAITING : (newTicket.plan ? TicketStatus.IN_PROGRESS : TicketStatus.RECEIVED),
       supportId: pmId,
       supportName: pmUser?.name,
     };
@@ -282,6 +363,11 @@ const App: React.FC = () => {
     });
   }, [currentUser.id]);
 
+  const handleUpdateOrgInfo = async (data: OrganizationInfo) => {
+    setOrgInfo(data);
+    await storage.saveOrganizationInfo(data);
+  };
+
   const handleApplyState = async (newState: AppState) => {
     setIsLoading(true);
     try {
@@ -293,6 +379,7 @@ const App: React.FC = () => {
       setComments(newState.comments);
       setHistory(newState.history);
       if (newState.opsInfo) setOpsInfo(newState.opsInfo);
+      if (newState.orgInfo) setOrgInfo(newState.orgInfo);
 
       const foundUser = newState.users.find(u => u.id === currentUser.id) || newState.users[0];
       setCurrentUser(foundUser);
@@ -309,6 +396,9 @@ const App: React.FC = () => {
       if (newState.opsInfo) {
         await storage.saveOpsInfos(newState.opsInfo);
       }
+      if (newState.orgInfo) {
+        await storage.saveOrganizationInfo(newState.orgInfo);
+      }
 
       console.log('Supabase 동기화 완료');
     } catch (err) {
@@ -319,7 +409,7 @@ const App: React.FC = () => {
   };
 
 
-  return (
+  const appUI = (
     <div className="flex min-h-screen bg-slate-50">
       {isSidebarOpen && <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setIsSidebarOpen(false)} />}
       <aside className={`fixed inset-y-0 left-0 w-72 bg-slate-900 text-white flex flex-col z-50 transition-transform duration-300 transform lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -330,7 +420,7 @@ const App: React.FC = () => {
           </h1>
           <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 hover:bg-slate-800 rounded-lg"><X size={20} /></button>
         </div>
-        <nav className="flex-1 p-6 space-y-2 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 p-6 space-y-2 overflow-y-auto custom-scrollbar flex flex-col">
           <NavItem icon={PlusCircle} label="New Ticket" targetView="create" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
           <NavItem icon={TicketIcon} label="티켓 관리" targetView="list" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
           <div className="pt-8 pb-3 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">Management</div>
@@ -339,12 +429,23 @@ const App: React.FC = () => {
           <NavItem icon={Building2} label="고객사 관리" targetView="companies" currentView={view} currentUserRole={currentUser.role} onClick={changeView} adminOnly />
           <NavItem icon={UsersIcon} label="회원 관리" targetView="users" currentView={view} currentUserRole={currentUser.role} onClick={changeView} adminOnly />
           <div className="pt-8 pb-3 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">System</div>
+          <NavItem icon={Building2} label="기관정보 설정" targetView="orgSettings" currentView={view} currentUserRole={currentUser.role} onClick={changeView} adminOnly />
           <NavItem icon={Database} label="데이터 관리" targetView="dataManagement" currentView={view} currentUserRole={currentUser.role} onClick={changeView} adminOnly />
-          <div className="px-4 pt-4">
-            <label className="block text-[10px] text-slate-500 mb-2 uppercase font-bold">Role Simulator</label>
+
+          <div className="px-4 pt-4 mb-4">
+            <label className="block text-[10px] text-slate-500 mb-2 uppercase font-bold">Role Simulator (Dev)</label>
             <select className="bg-slate-800 text-xs rounded-lg p-2.5 w-full border-none focus:ring-2 focus:ring-blue-500 outline-none text-slate-300" value={currentUser.id} onChange={(e) => setCurrentUser(users.find(u => u.id === e.target.value)!)}>
               {users.map(u => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}
             </select>
+          </div>
+
+          <div className="px-4 py-6 border-t border-slate-800 mt-auto">
+            <button
+              onClick={handleLogout}
+              className="w-full py-3 bg-slate-800 hover:bg-rose-900/40 text-slate-400 hover:text-rose-400 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border border-slate-700/50 hover:border-rose-900/50"
+            >
+              <LogOut size={14} /> Logout
+            </button>
           </div>
         </nav>
         <div onClick={() => changeView('profile')} className={`p-4 bg-slate-800/50 m-6 rounded-2xl cursor-pointer hover:bg-slate-800 transition-all border border-slate-700/30 group ${view === 'profile' ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}>
@@ -380,11 +481,12 @@ const App: React.FC = () => {
                   {view === 'projects' && 'Project Management'}
                   {view === 'opsManagement' && 'Operational Management'}
                   {view === 'profile' && 'My Account Settings'}
+                  {view === 'orgSettings' && 'Organization Settings'}
                   {view === 'dataManagement' && 'Data Management'}
                 </h2>
                 <p className="text-slate-500 text-sm sm:text-base mt-1">안녕하세요, {currentUser.name}님! {view === 'list' && '현재 활성화된 티켓 리스트입니다.'}</p>
               </div>
-              {(view === 'detail' || view === 'edit' || view === 'dataManagement') && <button onClick={() => changeView('list')} className="flex items-center gap-2 text-slate-500 hover:text-blue-600 font-bold px-4 py-2 rounded-xl border border-slate-200 bg-white shadow-sm transition-all self-start"><ChevronLeft size={20} /> Back to List</button>}
+              {(view === 'detail' || view === 'edit' || view === 'dataManagement' || view === 'orgSettings') && <button onClick={() => changeView('list')} className="flex items-center gap-2 text-slate-500 hover:text-blue-600 font-bold px-4 py-2 rounded-xl border border-slate-200 bg-white shadow-sm transition-all self-start"><ChevronLeft size={20} /> Back to List</button>}
             </div>
 
             <div className="relative">
@@ -419,6 +521,8 @@ const App: React.FC = () => {
                 <UserManagement
                   users={users}
                   companies={companies}
+                  currentUser={currentUser}
+                  orgInfo={orgInfo}
                   onAdd={async (data) => {
                     const user = { ...data, id: `u${Date.now()}` };
                     setUsers([...users, user]);
@@ -431,7 +535,7 @@ const App: React.FC = () => {
                   }}
                 />
               )}
-              {view === 'projects' && (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.SUPPORT) && (
+              {view === 'projects' && (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.SUPPORT_LEAD || currentUser.role === UserRole.SUPPORT_STAFF || currentUser.role === UserRole.CUSTOMER) && (
                 <ProjectManagement
                   projects={filteredProjects}
                   companies={companies}
@@ -458,7 +562,7 @@ const App: React.FC = () => {
                 />
               )}
               {/* 운영정보 관리: 권한이 있는 프로젝트의 정보만 표시 */}
-              {view === 'opsManagement' && (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.SUPPORT) && (
+              {view === 'opsManagement' && (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.SUPPORT_LEAD || currentUser.role === UserRole.SUPPORT_STAFF) && (
                 <OperationalManagement
                   projects={filteredProjects}
                   opsInfo={opsInfo}
@@ -474,9 +578,15 @@ const App: React.FC = () => {
                 />
               )}
               {view === 'profile' && <ProfileEdit user={currentUser} companyName={currentUser.companyId ? companies.find(c => c.id === currentUser.companyId)?.name : '본사 (nu)'} onUpdate={(data) => handleUpdateUser(currentUser.id, data)} onCancel={() => changeView('list')} />}
+              {view === 'orgSettings' && currentUser.role === UserRole.ADMIN && (
+                <OrganizationSettings
+                  initialData={orgInfo}
+                  onUpdate={handleUpdateOrgInfo}
+                />
+              )}
               {view === 'dataManagement' && currentUser.role === UserRole.ADMIN && (
                 <DataManagement
-                  currentState={{ companies, users, projects, tickets, comments, history, opsInfo }}
+                  currentState={{ companies, users, projects, tickets, comments, history, opsInfo, orgInfo }}
                   onApplyState={handleApplyState}
                 />
               )}
@@ -485,6 +595,14 @@ const App: React.FC = () => {
         )}
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {isLoading ? <LoadingOverlay /> : (
+        !isLoggedIn ? <Login users={users} onLogin={handleLogin} /> : appUI
+      )}
+    </>
   );
 };
 

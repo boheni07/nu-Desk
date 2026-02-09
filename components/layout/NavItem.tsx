@@ -24,7 +24,7 @@ const NavItem: React.FC<NavItemProps> = ({
     supportOrAdmin = false
 }) => {
     if (adminOnly && currentUserRole !== UserRole.ADMIN) return null;
-    if (supportOrAdmin && (currentUserRole !== UserRole.ADMIN && currentUserRole !== UserRole.SUPPORT)) return null;
+    if (supportOrAdmin && (currentUserRole !== UserRole.ADMIN && currentUserRole !== UserRole.SUPPORT_LEAD && currentUserRole !== UserRole.SUPPORT_STAFF && currentUserRole !== UserRole.CUSTOMER)) return null;
 
     const isActive = currentView === targetView;
 
@@ -32,8 +32,8 @@ const NavItem: React.FC<NavItemProps> = ({
         <button
             onClick={() => onClick(targetView)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${isActive
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                 }`}
         >
             <Icon size={20} />

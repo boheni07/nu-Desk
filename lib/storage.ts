@@ -1,6 +1,6 @@
 
 import { supabase } from '../supabaseClient';
-import { Company, User, Project, Ticket, Comment, HistoryEntry, OperationalInfo } from '../types';
+import { Company, User, Project, Ticket, Comment, HistoryEntry, OperationalInfo, OrganizationInfo } from '../types';
 
 /** 
  * Supabase 관계형 데이터베이스 처리 로직
@@ -37,7 +37,8 @@ export const fetchUsers = async (): Promise<User[]> => {
     return (data || []).map(u => ({
         ...u,
         loginId: u.login_id,
-        companyId: u.company_id
+        companyId: u.company_id,
+        department: u.department
     }));
 };
 
@@ -50,6 +51,7 @@ export const saveUser = async (user: User) => {
         role: user.role,
         status: user.status,
         company_id: user.companyId,
+        department: user.department,
         mobile: user.mobile,
         email: user.email,
         phone: user.phone
@@ -66,6 +68,7 @@ export const saveUsers = async (users: User[]) => {
         role: user.role,
         status: user.status,
         company_id: user.companyId,
+        department: user.department,
         mobile: user.mobile,
         email: user.email,
         phone: user.phone
@@ -143,7 +146,15 @@ export const fetchTickets = async (): Promise<Ticket[]> => {
         expectedCompletionDate: t.expected_completion_date,
         completionFeedback: t.completion_feedback,
         createdAt: t.created_at,
-        dueDate: t.due_date
+        dueDate: t.due_date,
+        shortenedDueReason: t.shortened_due_reason,
+        postponeReason: t.postpone_reason,
+        postponeDate: t.postpone_date,
+        rejectionReason: t.rejection_reason,
+        planAttachments: t.plan_attachments,
+        intakeMethod: t.intake_method,
+        expectedCompletionDelayReason: t.expected_completion_delay_reason,
+        requestDate: t.request_date
     }));
 };
 
@@ -163,7 +174,16 @@ export const saveTicket = async (ticket: Ticket) => {
         satisfaction: ticket.satisfaction,
         completion_feedback: ticket.completionFeedback,
         created_at: ticket.createdAt,
-        due_date: ticket.dueDate
+        due_date: ticket.dueDate,
+        shortened_due_reason: ticket.shortenedDueReason,
+        postpone_reason: ticket.postponeReason,
+        postpone_date: ticket.postponeDate,
+        rejection_reason: ticket.rejectionReason,
+        attachments: ticket.attachments,
+        plan_attachments: ticket.planAttachments,
+        intake_method: ticket.intakeMethod,
+        request_date: ticket.requestDate,
+        expected_completion_delay_reason: ticket.expectedCompletionDelayReason
     });
     if (error) throw error;
 };
@@ -184,7 +204,16 @@ export const saveTickets = async (tickets: Ticket[]) => {
         satisfaction: ticket.satisfaction,
         completion_feedback: ticket.completionFeedback,
         created_at: ticket.createdAt,
-        due_date: ticket.dueDate
+        due_date: ticket.dueDate,
+        shortened_due_reason: ticket.shortenedDueReason,
+        postpone_reason: ticket.postponeReason,
+        postpone_date: ticket.postponeDate,
+        rejection_reason: ticket.rejectionReason,
+        attachments: ticket.attachments,
+        plan_attachments: ticket.planAttachments,
+        intake_method: ticket.intakeMethod,
+        request_date: ticket.requestDate,
+        expected_completion_delay_reason: ticket.expectedCompletionDelayReason
     }));
     const { error } = await supabase.from('tickets').upsert(mapped);
     if (error) throw error;
@@ -303,5 +332,58 @@ export const saveHistoryEntries = async (entries: HistoryEntry[]) => {
         note: entry.note
     }));
     const { error } = await supabase.from('history').upsert(mapped);
+    if (error) throw error;
+};
+
+// --- 8. Organization Info (기관 정보) ---
+export const fetchOrganizationInfo = async (): Promise<OrganizationInfo | null> => {
+    try {
+        const { data, error } = await supabase.from('organization_info').select('*').eq('id', 'current').single();
+        if (error) {
+            if (error.code === 'PGRST116' || error.code === '42P01') return null;
+            throw error;
+        }
+        if (!data) return null;
+        return {
+            nameKo: data.name_ko,
+            nameEn: data.name_en,
+            representative: data.representative,
+            bizNumber: data.biz_number,
+            bizType: data.biz_type,
+            bizCategory: data.biz_category,
+            zipCode: data.zip_code,
+            address: data.address,
+            phone: data.phone,
+            email: data.email,
+            supportTeam1: data.support_team_1,
+            supportTeam2: data.support_team_2,
+            supportTeam3: data.support_team_3,
+            remarks: data.remarks
+        };
+    } catch (err) {
+        console.error('fetchOrganizationInfo error:', err);
+        return null;
+    }
+};
+
+export const saveOrganizationInfo = async (info: OrganizationInfo) => {
+    const { error } = await supabase.from('organization_info').upsert({
+        id: 'current',
+        name_ko: info.nameKo,
+        name_en: info.nameEn,
+        representative: info.representative,
+        biz_number: info.bizNumber,
+        biz_type: info.bizType,
+        biz_category: info.bizCategory,
+        zip_code: info.zipCode,
+        address: info.address,
+        phone: info.phone,
+        email: info.email,
+        support_team_1: info.supportTeam1,
+        support_team_2: info.supportTeam2,
+        support_team_3: info.supportTeam3,
+        remarks: info.remarks,
+        updated_at: new Date().toISOString()
+    });
     if (error) throw error;
 };

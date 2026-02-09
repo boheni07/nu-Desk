@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { User, UserRole, Company, UserStatus } from '../types';
-import { 
-  Plus, Edit2, Trash2, X, Search, Shield, User as UserIcon, 
+import { User, UserRole, Company, UserStatus, OrganizationInfo } from '../types';
+import {
+  Plus, Edit2, Trash2, X, Search, Shield, User as UserIcon,
   Mail, Phone, Smartphone, Lock, Eye, EyeOff, Building, MessageSquare,
   Power
 } from 'lucide-react';
@@ -10,12 +10,14 @@ import {
 interface Props {
   users: User[];
   companies: Company[];
+  currentUser: User;
+  orgInfo?: OrganizationInfo;
   onAdd: (userData: Omit<User, 'id'>) => void;
   onUpdate: (id: string, userData: Partial<User>) => void;
   onDelete: (id: string) => void;
 }
 
-const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, onDelete }) => {
+const UserManagement: React.FC<Props> = ({ users, companies, currentUser, orgInfo, onAdd, onUpdate, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -35,8 +37,8 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
     remarks: ''
   });
 
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredUsers = users.filter(u =>
+    u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.loginId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -102,7 +104,8 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
   const getRoleBadge = (role: UserRole) => {
     switch (role) {
       case UserRole.ADMIN: return 'bg-purple-100 text-purple-700 border-purple-200';
-      case UserRole.SUPPORT: return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+      case UserRole.SUPPORT_LEAD: return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+      case UserRole.SUPPORT_STAFF: return 'bg-indigo-50 text-indigo-600 border-indigo-100';
       case UserRole.CUSTOMER: return 'bg-blue-100 text-blue-700 border-blue-200';
       default: return 'bg-slate-100 text-slate-600';
     }
@@ -113,15 +116,15 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
       <div className="flex justify-between items-center">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="성명, ID, 역할 검색..." 
+          <input
+            type="text"
+            placeholder="성명, ID, 역할 검색..."
             className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-80 shadow-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button 
+        <button
           onClick={handleOpenAddModal}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-md"
         >
@@ -133,11 +136,12 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
         <table className="w-full text-left">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm">
-              <th className="px-6 py-4 font-semibold">ID / 성명</th>
+              <th className="px-6 py-4 font-semibold">성명</th>
+              <th className="px-6 py-4 font-semibold">ID</th>
               <th className="px-6 py-4 font-semibold">종류</th>
               <th className="px-6 py-4 font-semibold">상태</th>
               <th className="px-6 py-4 font-semibold">휴대폰</th>
-              <th className="px-6 py-4 font-semibold">소속 고객사</th>
+              <th className="px-6 py-4 font-semibold">소속</th>
               <th className="px-6 py-4 font-semibold text-right">관리</th>
             </tr>
           </thead>
@@ -148,19 +152,19 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
                 <tr key={user.id} className={`hover:bg-slate-50 transition-colors group text-sm ${!isActive ? 'opacity-60 grayscale-[0.5]' : ''}`}>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold ${isActive ? 'bg-slate-100 text-slate-500' : 'bg-slate-200 text-slate-400'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${isActive ? 'bg-slate-100 text-slate-500' : 'bg-slate-200 text-slate-400'}`}>
                         {user.name.charAt(0)}
                       </div>
-                      <div>
-                        <p className={`font-bold ${isActive ? 'text-slate-700' : 'text-slate-400'}`}>{user.name}</p>
-                        <p className="text-[11px] text-slate-400 font-mono tracking-tighter">{user.loginId}</p>
-                      </div>
+                      <span className={`font-bold ${isActive ? 'text-slate-700' : 'text-slate-400'}`}>{user.name}</span>
                     </div>
                   </td>
+                  <td className="px-6 py-4 font-mono text-slate-600">{user.loginId}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1 w-fit ${getRoleBadge(user.role)}`}>
                       {user.role === UserRole.ADMIN && <Shield size={10} />}
-                      {user.role}
+                      {user.role === UserRole.ADMIN ? '관리자' :
+                        user.role === UserRole.SUPPORT_LEAD ? '지원팀장' :
+                          user.role === UserRole.SUPPORT_STAFF ? '지원담당' : '고객담당'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -170,16 +174,27 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
                   </td>
                   <td className="px-6 py-4 text-slate-600">{user.mobile || '-'}</td>
                   <td className="px-6 py-4 text-slate-600">
-                    {user.role === UserRole.CUSTOMER 
+                    {user.role === UserRole.CUSTOMER
                       ? companies.find(c => c.id === user.companyId)?.name || 'N/A'
-                      : <span className="text-slate-300 italic">본사 (nu)</span>}
+                      : user.department || <span className="text-slate-300 italic">본사 (nu)</span>}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => handleOpenEditModal(user)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="수정">
                         <Edit2 size={16} />
                       </button>
-                      <button onClick={() => onDelete(user.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="삭제">
+                      <button
+                        onClick={() => {
+                          if (user.loginId === 'admin1') {
+                            alert('시스템 관리자 계정(admin1)은 삭제할 수 없습니다.');
+                            return;
+                          }
+                          onDelete(user.id);
+                        }}
+                        className={`p-1.5 rounded-md transition-colors ${user.loginId === 'admin1' ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
+                        title={user.loginId === 'admin1' ? "삭제 불가" : "삭제"}
+                        disabled={user.loginId === 'admin1'}
+                      >
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -198,7 +213,7 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
               <h3 className="text-lg font-bold text-slate-800">{editingUser ? '회원 정보 수정' : '신규 회원 등록'}</h3>
               <button onClick={() => setIsModalOpen(false)} className="p-1 hover:bg-slate-100 rounded-full"><X size={20} className="text-slate-400" /></button>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="overflow-y-auto custom-scrollbar">
               <div className="p-6 space-y-6">
                 {/* Status Selection */}
@@ -208,16 +223,16 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
                     <span className="text-sm font-bold text-slate-700">회원 상태 설정</span>
                   </div>
                   <div className="flex bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
-                    <button 
+                    <button
                       type="button"
-                      onClick={() => setFormData({...formData, status: UserStatus.ACTIVE})}
+                      onClick={() => setFormData({ ...formData, status: UserStatus.ACTIVE })}
                       className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${formData.status === UserStatus.ACTIVE ? 'bg-green-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                       활성
                     </button>
-                    <button 
+                    <button
                       type="button"
-                      onClick={() => setFormData({...formData, status: UserStatus.INACTIVE})}
+                      onClick={() => setFormData({ ...formData, status: UserStatus.INACTIVE })}
                       className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${formData.status === UserStatus.INACTIVE ? 'bg-slate-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                       비활성
@@ -231,14 +246,14 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
                     <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">ID * (영문숫자 조합)</label>
                     <div className="relative">
                       <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                      <input 
+                      <input
                         required
                         pattern="[a-zA-Z0-9]+"
-                        type="text" 
+                        type="text"
                         className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                         placeholder="영문, 숫자만 입력"
                         value={formData.loginId}
-                        onChange={(e) => setFormData({...formData, loginId: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, loginId: e.target.value })}
                       />
                     </div>
                   </div>
@@ -246,15 +261,15 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
                     <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">비밀번호 *</label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                      <input 
+                      <input
                         required
-                        type={showPassword ? "text" : "password"} 
+                        type={showPassword ? "text" : "password"}
                         className="w-full pl-10 pr-10 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                         placeholder="비밀번호"
                         value={formData.password}
-                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       />
-                      <button 
+                      <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
@@ -269,25 +284,25 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">성명 *</label>
-                    <input 
+                    <input
                       required
-                      type="text" 
+                      type="text"
                       className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                       placeholder="성명"
                       value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">이메일</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                      <input 
-                        type="email" 
+                      <input
+                        type="email"
                         className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                         placeholder="example@nu.com"
                         value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       />
                     </div>
                   </div>
@@ -299,12 +314,12 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
                     <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">전화번호</label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                      <input 
-                        type="tel" 
+                      <input
+                        type="tel"
                         className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                         placeholder="02-XXX-XXXX"
                         value={formData.phone}
-                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       />
                     </div>
                   </div>
@@ -312,12 +327,12 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
                     <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">휴대폰</label>
                     <div className="relative">
                       <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                      <input 
-                        type="tel" 
+                      <input
+                        type="tel"
                         className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                         placeholder="010-XXXX-XXXX"
                         value={formData.mobile}
-                        onChange={(e) => setFormData({...formData, mobile: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
                       />
                     </div>
                   </div>
@@ -327,33 +342,88 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">종류 (역할)</label>
-                    <select 
-                      className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"
-                      value={formData.role}
-                      onChange={(e) => setFormData({...formData, role: e.target.value as UserRole})}
-                    >
-                      <option value={UserRole.CUSTOMER}>고객담당</option>
-                      <option value={UserRole.SUPPORT}>지원담당</option>
-                      <option value={UserRole.ADMIN}>관리자</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        disabled={formData.role === UserRole.ADMIN && currentUser.loginId !== 'admin1'}
+                        className={`w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white disabled:bg-slate-50 disabled:text-slate-400`}
+                        value={formData.role}
+                        onChange={(e) => {
+                          const newRole = e.target.value as UserRole;
+                          let newDept = formData.department;
+
+                          // 지원팀이 1개만 설정되어 있을 경우 자동 선택
+                          if (newRole === UserRole.SUPPORT_LEAD || newRole === UserRole.SUPPORT_STAFF) {
+                            const teams = [orgInfo?.supportTeam1, orgInfo?.supportTeam2, orgInfo?.supportTeam3].filter(Boolean);
+                            if (teams.length === 1) {
+                              newDept = teams[0] as string;
+                            }
+                          }
+
+                          setFormData({
+                            ...formData,
+                            role: newRole,
+                            department: (newRole === UserRole.SUPPORT_LEAD || newRole === UserRole.SUPPORT_STAFF) ? newDept : '',
+                            companyId: newRole === UserRole.CUSTOMER ? formData.companyId : ''
+                          });
+                        }}
+                      >
+                        <option value={UserRole.CUSTOMER}>고객담당</option>
+                        <option value={UserRole.SUPPORT_LEAD}>지원팀장</option>
+                        <option value={UserRole.SUPPORT_STAFF}>지원담당</option>
+                        {/* 관리자 권한은 admin1 계정만 부여 가능 */}
+                        {(currentUser.loginId === 'admin1' || formData.role === UserRole.ADMIN) && (
+                          <option value={UserRole.ADMIN}>관리자</option>
+                        )}
+                      </select>
+                      {formData.role === UserRole.ADMIN && currentUser.loginId !== 'admin1' && (
+                        <p className="mt-1 text-[10px] text-amber-600 font-bold">* 관리자 역할 수정은 admin1 계정만 가능합니다.</p>
+                      )}
+                    </div>
                   </div>
                   <div>
-                    <label className={`block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider ${formData.role === UserRole.CUSTOMER ? 'text-blue-600' : ''}`}>
-                      소속 고객사 {formData.role === UserRole.CUSTOMER ? '*' : ''}
-                    </label>
-                    <div className="relative">
-                      <Building className={`absolute left-3 top-1/2 -translate-y-1/2 ${formData.role === UserRole.CUSTOMER ? 'text-blue-400' : 'text-slate-300'}`} size={16} />
-                      <select 
-                        disabled={formData.role !== UserRole.CUSTOMER}
-                        className={`w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white disabled:bg-slate-50 disabled:text-slate-400`}
-                        value={formData.companyId}
-                        onChange={(e) => setFormData({...formData, companyId: e.target.value})}
-                        required={formData.role === UserRole.CUSTOMER}
-                      >
-                        <option value="">고객사 선택</option>
-                        {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
-                    </div>
+                    {formData.role === UserRole.CUSTOMER ? (
+                      <>
+                        <label className="block text-xs font-bold text-blue-600 mb-1 uppercase tracking-wider">소속 고객사 *</label>
+                        <div className="relative">
+                          <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400" size={16} />
+                          <select
+                            required
+                            className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"
+                            value={formData.companyId}
+                            onChange={(e) => setFormData({ ...formData, companyId: e.target.value, department: '' })}
+                          >
+                            <option value="">고객사 선택</option>
+                            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                          </select>
+                        </div>
+                      </>
+                    ) : (formData.role === UserRole.SUPPORT_LEAD || formData.role === UserRole.SUPPORT_STAFF) ? (
+                      <>
+                        <label className="block text-xs font-bold text-indigo-600 mb-1 uppercase tracking-wider">소속 지원팀 *</label>
+                        <div className="relative">
+                          <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" size={16} />
+                          <select
+                            required
+                            className="w-full pl-10 pr-4 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"
+                            value={formData.department}
+                            onChange={(e) => setFormData({ ...formData, department: e.target.value, companyId: '' })}
+                          >
+                            <option value="">지원팀 선택</option>
+                            {orgInfo?.supportTeam1 && <option value={orgInfo.supportTeam1}>{orgInfo.supportTeam1}</option>}
+                            {orgInfo?.supportTeam2 && <option value={orgInfo.supportTeam2}>{orgInfo.supportTeam2}</option>}
+                            {orgInfo?.supportTeam3 && <option value={orgInfo.supportTeam3}>{orgInfo.supportTeam3}</option>}
+                          </select>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">소속 관리본부</label>
+                        <div className="relative">
+                          <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                          <div className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500">본사 (nu)</div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -362,26 +432,26 @@ const UserManagement: React.FC<Props> = ({ users, companies, onAdd, onUpdate, on
                   <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">비고</label>
                   <div className="relative">
                     <MessageSquare className="absolute left-3 top-3 text-slate-400" size={16} />
-                    <textarea 
+                    <textarea
                       className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm resize-none"
                       rows={3}
                       placeholder="회원 관련 특이사항 기록"
                       value={formData.remarks}
-                      onChange={(e) => setFormData({...formData, remarks: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
                     />
                   </div>
                 </div>
               </div>
-              
+
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 sticky bottom-0">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="px-6 py-2 text-slate-600 font-bold hover:bg-slate-200 rounded-lg transition-colors"
                 >
                   취소
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-8 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-100"
                 >

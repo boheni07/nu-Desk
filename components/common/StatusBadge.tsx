@@ -11,6 +11,7 @@ export const getStatusBadgeStyles = (status: TicketStatus) => {
     switch (status) {
         case TicketStatus.WAITING: return 'bg-amber-50 text-amber-700 border-amber-200';
         case TicketStatus.RECEIVED: return 'bg-blue-50 text-blue-700 border-blue-200';
+        case TicketStatus.RECEIVED_AUTO: return 'bg-amber-50 text-amber-600 border-amber-200 border-dashed';
         case TicketStatus.IN_PROGRESS: return 'bg-indigo-50 text-indigo-700 border-indigo-200';
         case TicketStatus.DELAYED: return 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse';
         case TicketStatus.POSTPONE_REQUESTED: return 'bg-orange-50 text-orange-700 border-orange-200';

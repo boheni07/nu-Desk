@@ -13,6 +13,7 @@ import {
   Briefcase,
   Shield,
   CalendarDays,
+  Activity,
   AlertTriangle,
   CheckCircle,
   Mail,
@@ -76,10 +77,11 @@ const TicketDetail: React.FC<Props> = ({
   }, [showPostponeModal, ticket.dueDate]);
 
   useEffect(() => {
-    const isSupportUser = currentUser.role === UserRole.SUPPORT || currentUser.role === UserRole.ADMIN;
-    const isPartOfProjectTeam = project.supportStaffIds.includes(currentUser.id) || currentUser.role === UserRole.ADMIN;
+    // 접수 자동화 로직: 지원팀장/지원담당이 열람했을 때만 발생 (관리자 제외)
+    const canAutoReceive = currentUser.role === UserRole.SUPPORT_LEAD || currentUser.role === UserRole.SUPPORT_STAFF;
+    const isPartOfProjectTeam = project.supportStaffIds.includes(currentUser.id);
 
-    if (isSupportUser && isPartOfProjectTeam && ticket.status === TicketStatus.WAITING) {
+    if (canAutoReceive && isPartOfProjectTeam && ticket.status === TicketStatus.WAITING) {
       onStatusUpdate(
         ticket.id,
         TicketStatus.RECEIVED,
@@ -244,7 +246,7 @@ const TicketDetail: React.FC<Props> = ({
                     </span>
                   </div>
                 </div>
-              ) : currentUser.role === UserRole.SUPPORT ? (
+              ) : (currentUser.role === UserRole.SUPPORT_LEAD || currentUser.role === UserRole.SUPPORT_STAFF) ? (
                 <div className="space-y-6">
                   <textarea className="w-full px-5 py-4 border border-slate-200 rounded-2xl outline-none text-sm resize-none bg-white focus:ring-4 focus:ring-blue-500/10" placeholder="처리 방법과 일정을 등록하세요." rows={5} value={planText} onChange={(e) => setPlanText(e.target.value)} />
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 space-y-4 shadow-sm">
@@ -263,7 +265,13 @@ const TicketDetail: React.FC<Props> = ({
                   <button onClick={handleRegisterPlan} className="w-full py-4 bg-blue-600 text-white text-sm font-black rounded-2xl hover:bg-blue-700 shadow-xl transition-all">계획 등록</button>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-40 text-slate-300"><Info size={40} /><p className="mt-3 text-xs font-bold italic">담당자의 계획 등록을 기다리는 중입니다.</p></div>
+                <div className="flex flex-col items-center justify-center h-40 text-slate-300">
+                  <div className="p-4 bg-slate-50 rounded-full mb-4">
+                    <Activity size={32} className="text-slate-200" />
+                  </div>
+                  <p className="text-sm font-bold text-slate-400">지원팀에서 처리 계획을 수립하고 있습니다.</p>
+                  <p className="text-[11px] text-slate-300 mt-1 uppercase tracking-widest font-black">Awaiting Support Plan</p>
+                </div>
               )}
             </div>
           </div>
@@ -279,24 +287,25 @@ const TicketDetail: React.FC<Props> = ({
               </div>
             )}
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              {(currentUser.role === UserRole.SUPPORT && (ticket.status === TicketStatus.IN_PROGRESS || ticket.status === TicketStatus.DELAYED)) && (
-                <>
-                  {ticket.status === TicketStatus.IN_PROGRESS && (
+              {((currentUser.role === UserRole.SUPPORT_LEAD || currentUser.role === UserRole.SUPPORT_STAFF || currentUser.role === UserRole.ADMIN) &&
+                (ticket.status === TicketStatus.IN_PROGRESS || ticket.status === TicketStatus.DELAYED)) && ticket.plan && (
+                  <>
+                    {ticket.status === TicketStatus.IN_PROGRESS && (
+                      <button
+                        onClick={() => setShowPostponeModal(true)}
+                        className="px-8 py-4 bg-slate-800 text-orange-400 rounded-2xl font-black text-sm hover:bg-slate-700 border border-slate-700 transition-all"
+                      >
+                        연기 요청
+                      </button>
+                    )}
                     <button
-                      onClick={() => setShowPostponeModal(true)}
-                      className="px-8 py-4 bg-slate-800 text-orange-400 rounded-2xl font-black text-sm hover:bg-slate-700 border border-slate-700 transition-all"
+                      onClick={() => setShowCompleteModal(true)}
+                      className="px-10 py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm hover:bg-emerald-700 shadow-xl shadow-emerald-900/40 transition-all"
                     >
-                      연기 요청
+                      완료 보고
                     </button>
-                  )}
-                  <button
-                    onClick={() => setShowCompleteModal(true)}
-                    className="px-10 py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm hover:bg-emerald-700 shadow-xl shadow-emerald-900/40 transition-all"
-                  >
-                    완료 보고
-                  </button>
-                </>
-              )}
+                  </>
+                )}
               {currentUser.role === UserRole.CUSTOMER && ticket.status === TicketStatus.POSTPONE_REQUESTED && (
                 <>
                   <button

@@ -1,20 +1,13 @@
 
 import React, { useState, useRef } from 'react';
-// Added UserRole to imports from types.ts
-import { Company, User, Project, Ticket, Comment, HistoryEntry, TicketStatus, UserRole, OperationalInfo } from '../types';
-import { initialCompanies, initialUsers, initialProjects, getInitialTickets } from '../App';
+// Redefining Data Management with AppState from types.ts
+import {
+  Company, User, Project, Ticket, Comment, HistoryEntry,
+  TicketStatus, UserRole, OperationalInfo, AppState, OrganizationInfo
+} from '../types';
+import { initialCompanies, initialUsers, initialProjects, getInitialTickets, defaultOrgInfo } from '../App';
 import { Download, Upload, RotateCcw, Trash2, CheckCircle2, AlertTriangle, Loader2, Database, HardDrive, FileJson, X } from 'lucide-react';
 import { addDays } from 'date-fns';
-
-interface AppState {
-  companies: Company[];
-  users: User[];
-  projects: Project[];
-  tickets: Ticket[];
-  comments: Comment[];
-  history: HistoryEntry[];
-  opsInfo?: OperationalInfo[];
-}
 
 interface Props {
   currentState: AppState;
@@ -35,12 +28,14 @@ const DataManagement: React.FC<Props> = ({ currentState, onApplyState }) => {
   const simulateProgress = async (steps: string[]) => {
     setIsExecuting(true);
     setResult(null);
+    setProgress(0);
     for (let i = 0; i < steps.length; i++) {
       setStatusMessage(steps[i]);
       const targetProgress = ((i + 1) / steps.length) * 100;
+
       // Animate progress smoothly
       const start = progress;
-      const duration = 400;
+      const duration = 300;
       const startTime = Date.now();
 
       await new Promise<void>(resolve => {
@@ -59,21 +54,42 @@ const DataManagement: React.FC<Props> = ({ currentState, onApplyState }) => {
 
   const handleBackup = async () => {
     setConfirmAction(null);
-    await simulateProgress(['데이터 직렬화 중...', '정합성 검증 중...', '파일 생성 중...', '다운로드 준비 완료']);
+    await simulateProgress(['데이터 직렬화 중...', '정합성 검증 중...', 'JSON 파일 패키징 중...', '다운로드 준비 완료']);
 
-    const dataStr = JSON.stringify(currentState, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    try {
+      // 명시적으로 모든 필드를 포함하여 백업
+      const backupData: AppState = {
+        companies: currentState.companies,
+        users: currentState.users,
+        projects: currentState.projects,
+        tickets: currentState.tickets,
+        comments: currentState.comments,
+        history: currentState.history,
+        opsInfo: currentState.opsInfo || [],
+        orgInfo: currentState.orgInfo
+      };
 
-    const exportFileDefaultName = `nu-servicedesk-backup-${new Date().toISOString().split('T')[0]}.json`;
+      const dataStr = JSON.stringify(backupData, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
 
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+      const fileName = `nu-desk-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
 
-    setResult({ success: true, message: '모든 데이터가 JSON 파일로 성공적으로 백업되었습니다.' });
-    setIsExecuting(false);
-    setProgress(0);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setResult({ success: true, message: '시스템의 모든 데이터가 성공적으로 백업되었습니다.' });
+    } catch (err) {
+      setResult({ success: false, message: '백업 중 오류가 발생했습니다.' });
+    } finally {
+      setIsExecuting(false);
+      setProgress(0);
+    }
   };
 
   const handleRestore = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,21 +97,34 @@ const DataManagement: React.FC<Props> = ({ currentState, onApplyState }) => {
     if (!file) return;
 
     setConfirmAction(null);
-    await simulateProgress(['파일 업로드 중...', 'JSON 파싱 중...', '데이터 구조 검증 중...', '시스템 상태 적용 중...']);
+    await simulateProgress(['파일 업로드 중...', '데이터 무결성 검사 중...', '스키마 매핑 중...', '시스템 상태 적용 중...']);
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
-        const importedState = JSON.parse(event.target?.result as string) as AppState;
-        // Basic validation
-        if (importedState.users && importedState.companies && importedState.tickets) {
-          onApplyState(importedState);
-          setResult({ success: true, message: `성공적으로 데이터를 복원했습니다. (기관: ${importedState.companies.length}, 티켓: ${importedState.tickets.length})` });
-        } else {
-          throw new Error('Invalid data structure');
+        const json = JSON.parse(event.target?.result as string);
+
+        // 필수 필드 체크 (기본적인 AppState 구조 확인)
+        if (!json.users || !json.companies || !json.projects || !json.tickets) {
+          throw new Error('올바른 백업 파일 형식이 아닙니다.');
         }
+
+        const newState: AppState = {
+          companies: json.companies,
+          users: json.users,
+          projects: json.projects,
+          tickets: json.tickets,
+          comments: json.comments || [],
+          history: json.history || [],
+          opsInfo: json.opsInfo || [],
+          orgInfo: json.orgInfo
+        };
+
+        await onApplyState(newState);
+        setResult({ success: true, message: '데이터 복원이 완료되었습니다. 시스템이 이전 상태로 복구되었습니다.' });
       } catch (err) {
-        setResult({ success: false, message: '복원에 실패했습니다. 유효한 백업 파일이 아닙니다.' });
+        console.error(err);
+        setResult({ success: false, message: '데이터 복원 실패: 파일이 손상되었거나 형식이 맞지 않습니다.' });
       } finally {
         setIsExecuting(false);
         setProgress(0);
@@ -107,51 +136,113 @@ const DataManagement: React.FC<Props> = ({ currentState, onApplyState }) => {
 
   const handleGenerateSamples = async () => {
     setConfirmAction(null);
-    await simulateProgress(['기존 데이터 초기화 중...', '샘플 기관 생성 중...', '샘플 프로젝트 매핑 중...', '테스트 티켓 생성 중...', '최종 적용 중...']);
+    await simulateProgress(['기존 데이터 정리 중...', '기관 정보 유지 중...', '샘플 프로젝트 및 운영정보 매핑 중...', '기본 티켓 및 처리 이력 구성 중...', '마지막 정합성 체크 중...']);
 
-    const now = new Date();
-    const sampleTickets = getInitialTickets(now);
-    const sampleHistory: HistoryEntry[] = [];
-    sampleTickets.forEach(t => {
-      sampleHistory.push({ id: `h-${t.id}-init`, ticketId: t.id, status: TicketStatus.WAITING, changedBy: t.customerName, timestamp: t.createdAt, note: '티켓이 신규 등록되었습니다.' });
-      if (t.status !== TicketStatus.WAITING) {
-        sampleHistory.push({ id: `h-${t.id}-received`, ticketId: t.id, status: TicketStatus.RECEIVED, changedBy: t.supportName || '시스템', timestamp: addDays(new Date(t.createdAt), 1).toISOString(), note: '티켓이 접수되었습니다.' });
-      }
-    });
+    try {
+      const now = new Date();
+      const sampleTickets = getInitialTickets(now);
 
-    onApplyState({
-      companies: initialCompanies,
-      users: initialUsers,
-      projects: initialProjects,
-      tickets: sampleTickets,
-      comments: [],
-      history: sampleHistory
-    });
+      // 더 정교한 이력 생성
+      const sampleHistory: HistoryEntry[] = [];
+      sampleTickets.forEach(t => {
+        // 생성 이력
+        sampleHistory.push({
+          id: `h-${t.id}-init`,
+          ticketId: t.id,
+          status: TicketStatus.WAITING,
+          changedBy: t.customerName,
+          timestamp: t.createdAt,
+          note: '티켓이 신규 등록되었습니다.'
+        });
 
-    setResult({ success: true, message: '기본 샘플 데이터 5세트가 성공적으로 생성되었습니다.' });
-    setIsExecuting(false);
-    setProgress(0);
+        // 접수 이력 (일부 티켓)
+        if (t.status !== TicketStatus.WAITING) {
+          sampleHistory.push({
+            id: `h-${t.id}-recv`,
+            ticketId: t.id,
+            status: TicketStatus.RECEIVED,
+            changedBy: t.supportName || '이지원 지원팀장',
+            timestamp: addDays(new Date(t.createdAt), 0.1).toISOString(),
+            note: '지원팀에서 티켓을 확인하고 접수하였습니다.'
+          });
+        }
+
+        // 처리중 이력 (일부 티켓)
+        if (t.status === TicketStatus.IN_PROGRESS || t.status === TicketStatus.COMPLETED) {
+          sampleHistory.push({
+            id: `h-${t.id}-work`,
+            ticketId: t.id,
+            status: TicketStatus.IN_PROGRESS,
+            changedBy: t.supportName || '박기술 엔지니어',
+            timestamp: addDays(new Date(t.createdAt), 0.5).toISOString(),
+            note: '기술 검토 및 해결 작업을 시작했습니다.'
+          });
+        }
+      });
+
+      // 프로젝트별 상세 운영정보 생성
+      const sampleOpsInfo: OperationalInfo[] = initialProjects.map(p => ({
+        projectId: p.id,
+        hardware: [
+          { id: `hw-${p.id}-1`, usage: 'WEB/WAS', cpu: '8 Core', memory: '16GB', hdd: '500GB SSD', manufacturer: 'Dell', model: 'PowerEdge R640', notes: 'Main Application Server', remarks: '' }
+        ],
+        software: [
+          { id: `sw-${p.id}-1`, usage: 'OS', productVersion: 'Ubuntu 22.04 LTS', installPath: '/', manufacturer: 'Canonical', techSupport: 'Internal', notes: 'Latest security patches applied', remarks: '' },
+          { id: `sw-${p.id}-2`, usage: 'DB', productVersion: 'PostgreSQL 15', installPath: '/var/lib/postgresql', manufacturer: 'PostgreSQL', techSupport: 'Open Source', notes: 'Daily backup configured', remarks: '' }
+        ],
+        access: [
+          { id: `acc-${p.id}-1`, target: 'Admin Console', loginId: 'admin', password1: '********', password2: '', usage: 'System Management', notes: 'VPN Access Required', remarks: '' }
+        ],
+        otherNotes: `${p.name} 환경을 위한 기본 운영 정보가 생성되었습니다. 특이사항 발생 시 업데이트가 필요합니다.`
+      }));
+
+      await onApplyState({
+        companies: initialCompanies,
+        users: initialUsers,
+        projects: initialProjects,
+        tickets: sampleTickets,
+        comments: [],
+        history: sampleHistory,
+        opsInfo: sampleOpsInfo,
+        orgInfo: currentState.orgInfo
+      });
+
+      setResult({ success: true, message: '고품질 샘플 데이터와 운영 정보가 성공적으로 적용되었습니다.' });
+    } catch (err) {
+      setResult({ success: false, message: '샘플 생성 중 오류가 발생했습니다.' });
+    } finally {
+      setIsExecuting(false);
+      setProgress(0);
+    }
   };
 
   const handleReset = async () => {
     setConfirmAction(null);
-    await simulateProgress(['모든 레코드 검색 중...', '티켓 및 히스토리 삭제 중...', '프로젝트 해제 중...', '관리자 계정 보존 중...', '데이터베이스 정리 중...']);
+    await simulateProgress(['모든 레코드 검색 중...', '티켓 및 커뮤니케이션 데이터 영구 삭제 중...', '프로젝트 및 인프라 매핑 해제 중...', '관리자 및 본사 계정 보호 중...', '데이터베이스 최적화 중...']);
 
-    // Reset to only default admin
-    // FIX: Correctly use UserRole.ADMIN instead of ActionType.ADMIN (ActionType is a type, not a value)
-    const adminOnly = initialUsers.filter(u => u.role === UserRole.ADMIN || u.id === 'u1');
-    onApplyState({
-      companies: initialCompanies.filter(c => c.id === 'c1'),
-      users: adminOnly,
-      projects: [],
-      tickets: [],
-      comments: [],
-      history: []
-    });
+    try {
+      // 본사(c1), 관리자들(u1, u2, u3)은 보존
+      const preservedCompanies = initialCompanies.filter(c => c.id === 'c1');
+      const preservedUsers = initialUsers.filter(u => u.loginId === 'admin1' || u.loginId === 'support1' || u.loginId === 'admin2');
 
-    setResult({ success: true, message: '플랫폼 데이터가 성공적으로 초기화되었습니다. 본사 및 관리자 정보만 유지됩니다.' });
-    setIsExecuting(false);
-    setProgress(0);
+      await onApplyState({
+        companies: preservedCompanies,
+        users: preservedUsers,
+        projects: [],
+        tickets: [],
+        comments: [],
+        history: [],
+        opsInfo: [],
+        orgInfo: defaultOrgInfo
+      });
+
+      setResult({ success: true, message: '모든 서비스 데이터가 초기화되었습니다. 마스터 정보와 관리자 권한만 유지됩니다.' });
+    } catch (err) {
+      setResult({ success: false, message: '초기화 중 오류가 발생했습니다.' });
+    } finally {
+      setIsExecuting(false);
+      setProgress(0);
+    }
   };
 
   const ActionCard = ({ icon: Icon, title, desc, onClick, variant = 'blue' }: any) => {

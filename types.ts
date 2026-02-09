@@ -1,13 +1,15 @@
 
 export enum UserRole {
   ADMIN = 'ADMIN',
-  SUPPORT = 'SUPPORT',
+  SUPPORT_LEAD = 'SUPPORT_LEAD',
+  SUPPORT_STAFF = 'SUPPORT_STAFF',
   CUSTOMER = 'CUSTOMER'
 }
 
 export enum TicketStatus {
   WAITING = '대기',
   RECEIVED = '접수',
+  RECEIVED_AUTO = '접수(자동)',
   IN_PROGRESS = '처리중',
   DELAYED = '지연중',
   POSTPONE_REQUESTED = '연기요청중',
@@ -58,6 +60,7 @@ export interface User {
   role: UserRole;
   status: UserStatus;
   companyId?: string;
+  department?: string; // 지원팀 정보
   remarks?: string;
 }
 
@@ -154,6 +157,23 @@ export interface AccessInfo {
   remarks: string;
 }
 
+export interface OrganizationInfo {
+  nameKo: string;
+  nameEn: string;
+  representative: string;
+  bizNumber: string; // 사업자등록번호
+  bizType: string;   // 업태
+  bizCategory: string; // 종목
+  zipCode: string;
+  address: string;
+  phone: string;
+  email: string;
+  supportTeam1: string;
+  supportTeam2: string;
+  supportTeam3: string;
+  remarks: string;
+}
+
 export interface OperationalInfo {
   projectId: string;
   hardware: HardwareInfo[];
@@ -170,4 +190,5 @@ export interface AppState {
   comments: Comment[];
   history: HistoryEntry[];
   opsInfo: OperationalInfo[];
+  orgInfo?: OrganizationInfo;
 }

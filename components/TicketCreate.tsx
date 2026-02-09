@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Project, User, Ticket, UserRole, IntakeMethod } from '../types';
 import { addBusinessDays } from '../utils';
-import { Paperclip, Calendar, X, Check, Phone, HelpCircle, FileText } from 'lucide-react';
+import { Paperclip, Calendar, X, Check, Phone, HelpCircle, FileText, Loader2 } from 'lucide-react';
 import { format, isBefore, startOfDay } from 'date-fns';
 
 interface Props {
@@ -17,8 +17,8 @@ const ALLOWED_EXTENSIONS = ".pdf,.doc,.docx,.xlsx,.xls,.pptx,.ppt,.png,.jpg,.jpe
 
 const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onSubmit, onCancel }) => {
   const isAdmin = currentUser.role === UserRole.ADMIN;
-  const isSupport = currentUser.role === UserRole.SUPPORT;
-  
+  const isSupport = currentUser.role === UserRole.SUPPORT_LEAD || currentUser.role === UserRole.SUPPORT_STAFF;
+
   const filteredProjects = useMemo(() => {
     if (isAdmin) return projects;
     if (isSupport) {
@@ -29,7 +29,7 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
 
   const defaultDueDate = useMemo(() => addBusinessDays(new Date(), 5), []);
   const normalizedDefault = startOfDay(defaultDueDate);
-  
+
   const [title, setTitle] = useState(initialData?.title || '');
   const [description, setDescription] = useState(initialData?.description || '');
   const [projectId, setProjectId] = useState(initialData?.projectId || filteredProjects[0]?.id || '');
@@ -39,14 +39,28 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
   const [dueReason, setDueReason] = useState(initialData?.shortenedDueReason || '');
   const [files, setFiles] = useState<File[]>([]);
 
+  // 지원팀 전용 추가 필드
+  const [plan, setPlan] = useState(initialData?.plan || '');
+  const [expectedDate, setExpectedDate] = useState(
+    initialData?.expectedCompletionDate ? format(new Date(initialData.expectedCompletionDate), 'yyyy-MM-dd') : format(defaultDueDate, 'yyyy-MM-dd')
+  );
+
   const [intakeMethod, setIntakeMethod] = useState<IntakeMethod>(initialData?.intakeMethod || IntakeMethod.PHONE);
   const [requestDate, setRequestDate] = useState(
     initialData?.requestDate ? format(new Date(initialData.requestDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
   );
 
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const isShortened = useMemo(() => {
-    const selected = startOfDay(new Date(dueDate));
-    return isBefore(selected, normalizedDefault);
+    if (!dueDate) return false;
+    try {
+      const selected = startOfDay(new Date(dueDate));
+      return isBefore(selected, normalizedDefault);
+    } catch {
+      return false;
+    }
   }, [dueDate, normalizedDefault]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,24 +80,40 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
       alert('모든 필수 항목을 입력해주세요.');
       return;
     }
+    setShowConfirm(true);
+  };
 
-    const payload: Omit<Ticket, 'id' | 'createdAt' | 'status'> = {
-      title,
-      description,
-      projectId,
-      customerId: initialData?.customerId || currentUser.id,
-      customerName: initialData?.customerName || currentUser.name,
-      dueDate: new Date(dueDate).toISOString(),
-      shortenedDueReason: isShortened ? dueReason : undefined,
-      attachments: files.length > 0 ? files.map(f => f.name) : initialData?.attachments,
-    };
+  const handleFinalSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const payload: Omit<Ticket, 'id' | 'createdAt' | 'status'> = {
+        title,
+        description,
+        projectId,
+        customerId: initialData?.customerId || currentUser.id,
+        customerName: initialData?.customerName || currentUser.name,
+        dueDate: new Date(dueDate).toISOString(),
+        shortenedDueReason: isShortened ? dueReason : undefined,
+        attachments: files.length > 0 ? files.map(f => f.name) : initialData?.attachments,
+        plan: isSupport && plan ? plan : initialData?.plan,
+        expectedCompletionDate: isSupport && plan && expectedDate ? new Date(expectedDate).toISOString() : initialData?.expectedCompletionDate,
+      };
 
-    if (isSupport || isAdmin) {
-      payload.intakeMethod = intakeMethod;
-      payload.requestDate = new Date(requestDate).toISOString();
+      if (isSupport || isAdmin) {
+        payload.intakeMethod = intakeMethod;
+        payload.requestDate = new Date(requestDate).toISOString();
+      }
+
+      await onSubmit(payload);
+      setShowConfirm(false);
+    } catch (err: any) {
+      console.error('Ticket registration error:', err);
+      const errorMessage = err?.message || '알 수 없는 오류가 발생했습니다.';
+      alert(`티켓 등록 중 오류가 발생했습니다: ${errorMessage}`);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onSubmit(payload);
   };
 
   return (
@@ -93,7 +123,7 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
           <div className="lg:col-span-2 space-y-6 sm:space-y-8">
             <div className="space-y-2">
               <label className="block text-sm font-bold text-slate-700 ml-1">프로젝트 선택 *</label>
-              <select 
+              <select
                 className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none bg-slate-50 transition-all text-sm font-medium"
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
@@ -106,8 +136,8 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
 
             <div className="space-y-2">
               <label className="block text-sm font-bold text-slate-700 ml-1">제목 *</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="요청 제목을 입력하세요"
                 className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none bg-slate-50 transition-all text-sm font-medium"
                 value={title}
@@ -119,7 +149,7 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
             <div className="space-y-2">
               <label className="block text-sm font-bold text-slate-700 ml-1">요청 상세 *</label>
               <div className="relative border border-slate-200 rounded-2xl overflow-hidden focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500 transition-all bg-slate-50">
-                <textarea 
+                <textarea
                   rows={8}
                   placeholder="요청 내용을 상세히 기재해주세요."
                   className="w-full px-5 py-4 bg-transparent outline-none resize-none text-sm leading-relaxed"
@@ -128,17 +158,17 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
                   required
                 />
                 <div className="p-4 bg-white/50 border-t border-slate-200/50">
-                   <div className="flex justify-between items-center mb-4">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                        <FileText size={14} /> 첨부 파일 (문서, PR, 엑셀, 그림)
-                      </p>
-                      <label className="px-4 py-2 bg-white hover:bg-slate-50 rounded-xl cursor-pointer transition-colors border border-slate-200 shadow-sm flex items-center gap-2 text-xs font-bold text-slate-600">
-                        <Paperclip size={14} />
-                        <span>파일 선택</span>
-                        <input type="file" multiple accept={ALLOWED_EXTENSIONS} className="hidden" onChange={handleFileChange} />
-                      </label>
-                   </div>
-                   {files.length > 0 && (
+                  <div className="flex justify-between items-center mb-4">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <FileText size={14} /> 첨부 파일 (문서, PR, 엑셀, 그림)
+                    </p>
+                    <label className="px-4 py-2 bg-white hover:bg-slate-50 rounded-xl cursor-pointer transition-colors border border-slate-200 shadow-sm flex items-center gap-2 text-xs font-bold text-slate-600">
+                      <Paperclip size={14} />
+                      <span>파일 선택</span>
+                      <input type="file" multiple accept={ALLOWED_EXTENSIONS} className="hidden" onChange={handleFileChange} />
+                    </label>
+                  </div>
+                  {files.length > 0 && (
                     <div className="flex flex-wrap gap-2 animate-in fade-in duration-300">
                       {files.map((f, i) => (
                         <span key={i} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 text-[11px] font-bold rounded-xl border border-blue-100 shadow-sm">
@@ -147,27 +177,41 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
                         </span>
                       ))}
                     </div>
-                   )}
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
           <div className="space-y-6 lg:space-y-8">
-            {(isSupport || isAdmin) && (
+            {isSupport && (
               <div className="bg-indigo-50/50 p-6 sm:p-8 rounded-3xl border border-indigo-100 shadow-sm">
                 <h3 className="text-sm font-bold text-indigo-800 mb-6 flex items-center gap-2.5">
                   <div className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600"><Phone size={16} /></div> 지원 정보
                 </h3>
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-[10px] font-black text-indigo-400 mb-2.5 uppercase tracking-widest">접수 방법 *</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {Object.values(IntakeMethod).map((method) => (
-                        <button key={method} type="button" onClick={() => setIntakeMethod(method)} className={`px-3 py-3 rounded-xl text-xs font-bold border transition-all ${intakeMethod === method ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg' : 'bg-white text-indigo-400 border-indigo-100'}`}>{method}</button>
-                      ))}
-                    </div>
+                    <label className="block text-[10px] font-black text-indigo-400 mb-2.5 uppercase tracking-widest">일괄 처리계획 등록 (선택)</label>
+                    <textarea
+                      placeholder="등록과 동시에 처리 계획을 입력하면 즉시 '처리중' 상태가 됩니다."
+                      className="w-full px-4 py-3 border border-indigo-100 rounded-xl outline-none bg-white text-xs resize-none"
+                      rows={3}
+                      value={plan}
+                      onChange={(e) => setPlan(e.target.value)}
+                    />
                   </div>
+                  {plan && (
+                    <div>
+                      <label className="block text-[10px] font-black text-indigo-400 mb-2.5 uppercase tracking-widest">완료 예정일 *</label>
+                      <input
+                        type="date"
+                        className="w-full px-4 py-3 border border-indigo-100 rounded-xl outline-none bg-white text-sm font-medium"
+                        value={expectedDate}
+                        onChange={(e) => setExpectedDate(e.target.value)}
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -198,8 +242,67 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
           <button type="button" onClick={onCancel} className="px-8 py-3.5 text-slate-500 font-bold hover:bg-slate-50 rounded-2xl transition-all text-sm">취소</button>
           <button type="submit" className="px-12 py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 shadow-xl transition-all flex items-center gap-2 text-sm uppercase tracking-widest leading-none"><Check size={20} /> 티켓 등록 완료</button>
         </div>
-      </form>
-    </div>
+      </form >
+
+      {/* Confirmation Modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden transition-all transform scale-100">
+            <div className="p-8 sm:p-10">
+              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
+                <HelpCircle size={32} />
+              </div>
+
+              <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">티켓을 등록할까요?</h3>
+              <p className="text-slate-500 font-medium mb-8">입력하신 내용을 마지막으로 확인해주세요.</p>
+
+              <div className="space-y-4 mb-10">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">제목</p>
+                  <p className="text-sm font-bold text-slate-700 truncate">{title || '-'}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">프로젝트</p>
+                    <p className="text-sm font-bold text-slate-700 truncate">{projects.find(p => p.id === projectId)?.name || '-'}</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">희망 기한</p>
+                    <p className="text-sm font-bold text-slate-700">{dueDate || '-'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => !isSubmitting && setShowConfirm(false)}
+                  disabled={isSubmitting}
+                  className="flex-1 py-4 text-slate-500 font-bold hover:bg-slate-50 rounded-2xl transition-all disabled:opacity-50"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={handleFinalSubmit}
+                  disabled={isSubmitting}
+                  className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all active:scale-95 text-sm uppercase tracking-widest flex items-center justify-center gap-2 disabled:bg-blue-400"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      <span>처리 중...</span>
+                    </>
+                  ) : (
+                    '최종 등록'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div >
   );
 };
 

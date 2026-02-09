@@ -191,6 +191,15 @@ const TicketDetail: React.FC<Props> = ({
                 <div className="text-sm sm:text-base text-slate-600 whitespace-pre-wrap leading-relaxed break-words font-medium">
                   {ticket.description}
                 </div>
+                <div className="mt-6 pt-6 border-t border-slate-50 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 bg-amber-50 rounded text-amber-600"><CalendarDays size={14} /></div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-slate-400">Processing Deadline</span>
+                  </div>
+                  <span className={`text-sm font-black ${isDelayed ? 'text-rose-600' : 'text-slate-600'}`}>
+                    {format(new Date(ticket.dueDate), 'yyyy-MM-dd')}
+                  </span>
+                </div>
                 {ticket.attachments && ticket.attachments.length > 0 && (
                   <div className="mt-8 pt-8 border-t border-slate-50">
                     <p className="text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">요청 첨부파일</p>

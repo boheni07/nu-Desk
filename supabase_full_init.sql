@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     completion_feedback TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     due_date TIMESTAMPTZ,
+    initial_due_date TIMESTAMPTZ,
     shortened_due_reason TEXT,
     postpone_reason TEXT,
     postpone_date TIMESTAMPTZ,

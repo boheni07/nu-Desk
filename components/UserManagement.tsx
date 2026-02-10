@@ -1,16 +1,19 @@
 
 import React, { useState } from 'react';
-import { User, UserRole, Company, UserStatus, OrganizationInfo } from '../types';
+import { User, UserRole, Company, Project, Ticket, UserStatus, OrganizationInfo } from '../types';
 import {
   Plus, Edit2, Trash2, X, Search, Shield, User as UserIcon,
   Mail, Phone, Smartphone, Lock, Eye, EyeOff, Building, MessageSquare,
   Power
 } from 'lucide-react';
 import { formatPhoneNumber, isValidEmail } from '../lib/formatters';
+import DeleteConfirmModal from './common/DeleteConfirmModal';
 
 interface Props {
   users: User[];
   companies: Company[];
+  projects: Project[];
+  tickets: Ticket[];
   currentUser: User;
   orgInfo?: OrganizationInfo;
   onAdd: (userData: Omit<User, 'id'>) => void;
@@ -18,10 +21,14 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-const UserManagement: React.FC<Props> = ({ users, companies, currentUser, orgInfo, onAdd, onUpdate, onDelete }) => {
+const UserManagement: React.FC<Props> = ({ users, companies, projects, tickets, currentUser, orgInfo, onAdd, onUpdate, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  // Delete Confirmation State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   // Form State
@@ -71,11 +78,32 @@ const UserManagement: React.FC<Props> = ({ users, companies, currentUser, orgInf
       mobile: user.mobile || '',
       email: user.email || '',
       role: user.role,
-      status: user.status,
+      status: user.status || UserStatus.ACTIVE,
+      department: user.department || '',
       companyId: user.companyId || '',
       remarks: user.remarks || ''
     });
     setIsModalOpen(true);
+  };
+
+  const handleOpenDeleteModal = (user: User) => {
+    setDeletingUser(user);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deletingUser) {
+      onDelete(deletingUser.id);
+      setIsDeleteModalOpen(false);
+      setDeletingUser(null);
+    }
+  };
+
+  const getRelatedData = (user: User) => {
+    return [
+      { label: '참여 프로젝트', count: projects.filter(p => p.supportStaffIds.includes(user.id) || p.customerContactIds.includes(user.id)).length },
+      { label: '관련 티켓 (요청/지원)', count: tickets.filter(t => t.customerId === user.id || t.supportId === user.id).length }
+    ];
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -195,7 +223,7 @@ const UserManagement: React.FC<Props> = ({ users, companies, currentUser, orgInf
                             alert('시스템 관리자 계정(admin1)은 삭제할 수 없습니다.');
                             return;
                           }
-                          onDelete(user.id);
+                          handleOpenDeleteModal(user);
                         }}
                         className={`p-1.5 rounded-md transition-colors ${user.loginId === 'admin1' ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
                         title={user.loginId === 'admin1' ? "삭제 불가" : "삭제"}
@@ -467,6 +495,17 @@ const UserManagement: React.FC<Props> = ({ users, companies, currentUser, orgInf
             </form>
           </div>
         </div>
+      )}
+      {isDeleteModalOpen && deletingUser && (
+        <DeleteConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={confirmDelete}
+          title="사용자 삭제 확인"
+          targetName={deletingUser.name}
+          relatedData={getRelatedData(deletingUser)}
+          description="사용자 삭제 시 해당 사용자가 작성한 내역의 실명이 대체되거나 이력이 상실될 수 있습니다."
+        />
       )}
     </div>
   );

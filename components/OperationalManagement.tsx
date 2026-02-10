@@ -222,13 +222,14 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
                   <th className="px-4 py-3">접속대상</th>
                   <th className="px-4 py-3">아이디</th>
                   <th className="px-4 py-3">비밀번호</th>
+                  <th className="px-4 py-3">접속경로</th>
                   <th className="px-4 py-3">비고</th>
                   <th className="px-4 py-3 text-right">관리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 text-sm">
                 {currentOpsInfo.access.length === 0 ? (
-                  <tr><td colSpan={6} className="py-10 text-center text-slate-400 font-bold">데이터가 없습니다.</td></tr>
+                  <tr><td colSpan={7} className="py-10 text-center text-slate-400 font-bold">데이터가 없습니다.</td></tr>
                 ) : (
                   currentOpsInfo.access.map(item => (
                     <AccessRow key={item.id} item={item} onEdit={() => { setEditingItem({ type: 'access', data: item }); setIsModalOpen(true); }} onDelete={() => handleDelete('access', item.id)} />
@@ -286,6 +287,7 @@ const AccessRow: React.FC<{ item: AccessInfo, onEdit: () => void, onDelete: () =
           </button>
         </div>
       </td>
+      <td className="px-4 py-3 font-medium text-slate-600 max-w-[150px] truncate">{item.accessPath || '-'}</td>
       <td className="px-4 py-3 text-slate-500 max-w-[200px] truncate">{item.remarks || '-'}</td>
       <td className="px-4 py-3 text-right">
         <div className="flex justify-end gap-1">
@@ -293,7 +295,7 @@ const AccessRow: React.FC<{ item: AccessInfo, onEdit: () => void, onDelete: () =
           <button onClick={onDelete} className="p-1.5 hover:bg-white rounded hover:shadow-sm text-slate-400 hover:text-rose-600 transition-all"><Trash2 size={14} /></button>
         </div>
       </td>
-    </tr>
+    </tr >
   );
 };
 

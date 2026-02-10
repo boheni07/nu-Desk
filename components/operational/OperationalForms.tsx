@@ -58,7 +58,7 @@ export const SoftwareForm = ({ initialData, onSave }: any) => {
 };
 
 export const AccessForm = ({ initialData, onSave }: any) => {
-    const [data, setData] = useState<AccessInfo>({ id: '', target: '', loginId: '', password1: '', password2: '', usage: '', notes: '', remarks: '', ...initialData });
+    const [data, setData] = useState<AccessInfo>({ id: '', target: '', loginId: '', password1: '', password2: '', usage: '', notes: '', accessPath: '', remarks: '', ...initialData });
     const [showPass1, setShowPass1] = useState(false);
     return (
         <div className="space-y-4 font-bold">
@@ -70,8 +70,7 @@ export const AccessForm = ({ initialData, onSave }: any) => {
                 <div><label className="text-[10px] text-slate-400 ml-1 uppercase">용도</label>
                     <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.usage} onChange={e => setData({ ...data, usage: e.target.value })} /></div>
             </div>
-            <div>
-                <label className="text-[10px] text-slate-400 ml-1 uppercase">비밀번호</label>
+            <div><label className="text-[10px] text-slate-400 ml-1 uppercase">비밀번호</label>
                 <div className="relative">
                     <input type={showPass1 ? "text" : "password"} placeholder="••••••••" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.password1} onChange={e => setData({ ...data, password1: e.target.value })} />
                     <button onClick={() => setShowPass1(!showPass1)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors">
@@ -79,6 +78,8 @@ export const AccessForm = ({ initialData, onSave }: any) => {
                     </button>
                 </div>
             </div>
+            <div><label className="text-[10px] text-slate-400 ml-1 uppercase">접속경로</label>
+                <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none" value={data.accessPath} onChange={e => setData({ ...data, accessPath: e.target.value })} /></div>
             <div><label className="text-[10px] text-slate-400 ml-1 uppercase">비고</label>
                 <textarea className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none min-h-[80px]" value={data.remarks} onChange={e => setData({ ...data, remarks: e.target.value })} /></div>
             <button onClick={() => onSave(data)} className="w-full py-4 bg-amber-600 text-white rounded-xl flex items-center justify-center gap-2 mt-4 font-black shadow-lg shadow-amber-100 text-sm">

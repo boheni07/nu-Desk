@@ -37,72 +37,30 @@ import { useAppState } from './hooks/useAppState';
 import { useTicketHandlers } from './hooks/useTicketHandlers';
 import { useBackgroundTasks } from './hooks/useBackgroundTasks';
 
-// 1. Initial Sample Companies
-export const initialCompanies: Company[] = [
-  { id: 'c1', name: '누테크놀로지', representative: '누대표', industry: 'IT 서비스', address: '서울시 강남구', remarks: '본사', status: CompanyStatus.ACTIVE },
-  { id: 'c2', name: '(주)미래제조', representative: '김미래', industry: '제조업', address: '경기도 판교', remarks: '핵심 고객사', status: CompanyStatus.ACTIVE },
-  { id: 'c3', name: '글로벌유통', representative: '이유통', industry: '유통업', address: '부산시 해운대구', remarks: '전략적 파트너', status: CompanyStatus.ACTIVE },
-  { id: 'c4', name: '한국금융솔루션', representative: '박금융', industry: '금융업', address: '서울시 여의도', status: CompanyStatus.ACTIVE },
-  { id: 'c5', name: '공공데이터센터', representative: '최공공', industry: '공공기관', address: '세종특별자치시', status: CompanyStatus.ACTIVE },
-];
-
-// 2. Initial Sample Users
-export const initialUsers: User[] = [
-  { id: 'u1', loginId: 'admin1', password: 'password123', name: '홍길동 관리자', role: UserRole.ADMIN, status: UserStatus.ACTIVE, mobile: '010-1111-2222', email: 'admin@nu.com' },
-  { id: 'u2', loginId: 'support1', password: 'password123', name: '이지원 지원팀장', role: UserRole.SUPPORT_LEAD, status: UserStatus.ACTIVE, department: '기술지원1팀', mobile: '010-3333-4444', email: 'support1@nu.com' },
-  { id: 'u3', loginId: 'support2', password: 'password123', name: '박기술 엔지니어', role: UserRole.SUPPORT_STAFF, status: UserStatus.ACTIVE, department: '기술지원1팀', mobile: '010-7777-8888', email: 'support2@nu.com' },
-  { id: 'u4', loginId: 'customer1', password: 'password123', name: '김고객 과장', role: UserRole.CUSTOMER, status: UserStatus.ACTIVE, companyId: 'c2', phone: '02-123-4567', mobile: '010-5555-6666', email: 'customer1@mirai.com' },
-  { id: 'u5', loginId: 'customer2', password: 'password123', name: '최협력 대리', role: UserRole.CUSTOMER, status: UserStatus.ACTIVE, companyId: 'c3', phone: '051-987-6543', mobile: '010-9999-0000', email: 'customer2@global.com' },
-];
-
-// 3. Initial Sample Projects
-export const initialProjects: Project[] = [
-  { id: 'p1', name: 'ERP 시스템 고도화', clientId: 'c2', customerContactIds: ['u4'], supportStaffIds: ['u2', 'u3'], description: '기존 ERP 성능 향상 및 모바일 대응', startDate: '2024-01-01', endDate: '2024-12-31', status: ProjectStatus.ACTIVE },
-  { id: 'p2', name: '클라우드 마이그레이션', clientId: 'c3', customerContactIds: ['u5'], supportStaffIds: ['u3'], description: '온프레미스 서버의 AWS 전환', startDate: '2024-03-01', endDate: '2024-09-30', status: ProjectStatus.ACTIVE },
-  { id: 'p3', name: '차세대 뱅킹 보안 강화', clientId: 'c4', customerContactIds: [], supportStaffIds: ['u2'], description: '금융권 보안 가이드라인 준수 작업', startDate: '2024-05-15', endDate: '2025-05-14', status: ProjectStatus.ACTIVE },
-  { id: 'p4', name: '대시보드 모바일화', clientId: 'c5', customerContactIds: [], supportStaffIds: ['u2'], description: '공공 데이터 시각화 앱 개발', startDate: '2024-02-01', endDate: '2024-06-30', status: ProjectStatus.ACTIVE },
-  { id: 'p5', name: 'AI 기반 수요예측 시스템', clientId: 'c2', customerContactIds: ['u4'], supportStaffIds: ['u3'], description: '제조 공정 최적화를 위한 AI 도입', startDate: '2024-06-01', endDate: '2024-11-30', status: ProjectStatus.ACTIVE },
-];
-
-export const defaultOrgInfo: OrganizationInfo = {
-  nameKo: '누테크놀로지',
-  nameEn: 'NU Technology',
-  representative: '홍길동',
-  bizNumber: '000-00-00000',
-  bizType: '서비스',
-  bizCategory: '소프트웨어 개발',
-  zipCode: '00000',
-  address: '서울시 강남구',
-  phone: '02-000-0000',
-  email: 'info@nu.com',
-  supportTeam1: '기술지원1팀',
-  supportTeam2: '기술지원2팀',
-  supportTeam3: '고객지원팀',
-  remarks: ''
-};
-
-export const getInitialTickets = (now: Date): Ticket[] => [
-  { id: 'T-1001', title: '로그인 페이지 간헐적 튕김 현상', description: '특정 모바일 브라우저에서 로그인 시도 시 세션이 유지되지 않고 메인으로 돌아갑니다.', status: TicketStatus.WAITING, customerId: 'u4', customerName: '김고객 과장', projectId: 'p1', createdAt: addDays(now, -1).toISOString(), dueDate: addBusinessDays(now, 4).toISOString(), initialDueDate: addBusinessDays(now, 4).toISOString() },
-  { id: 'T-1002', title: '신규 사용자 권한 일괄 등록 요청', description: '인사 이동으로 인한 50명의 사용자 권한을 엑셀 기반으로 등록 요청합니다.', status: TicketStatus.RECEIVED, customerId: 'u5', customerName: '최협력 대리', supportId: 'u3', supportName: '박기술 엔지니어', projectId: 'p2', createdAt: addDays(now, -2).toISOString(), dueDate: addBusinessDays(now, 3).toISOString(), initialDueDate: addBusinessDays(now, 3).toISOString() },
-  { id: 'T-1003', title: '실시간 데이터 동기화 지연 문의', description: '어제 오후 3시부터 금융 데이터 동기화 주기가 10분 이상 지연되고 있습니다.', status: TicketStatus.IN_PROGRESS, customerId: 'u4', customerName: '김고객 과장', supportId: 'u2', supportName: '이지원 지원팀장', projectId: 'p3', plan: '서버 로그 분석 후 DB 인덱스 재구성 예정', expectedCompletionDate: addDays(now, 1).toISOString(), createdAt: addDays(now, -1).toISOString(), dueDate: addBusinessDays(now, 2).toISOString(), initialDueDate: addBusinessDays(now, 2).toISOString() },
-  { id: 'T-1004', title: '공공 API 인터페이스 사양 변경 대응', description: '정부 API 버전 업그레이드에 따른 연동 모듈 수정이 필요합니다.', status: TicketStatus.DELAYED, customerId: 'u4', customerName: '김고객 과장', supportId: 'u3', supportName: '박기술 엔지니어', projectId: 'p4', createdAt: addDays(now, -7).toISOString(), dueDate: addDays(now, -1).toISOString(), initialDueDate: addDays(now, -1).toISOString() },
-  { id: 'T-1005', title: '수요예측 대시보드 UI 레이아웃 개선', description: '사용자 피드백을 반영하여 메인 차트 크기를 키우고 필터를 상단으로 이동했습니다.', status: TicketStatus.COMPLETED, customerId: 'u5', customerName: '최협력 대리', supportId: 'u2', supportName: '이지원 지원팀장', projectId: 'p5', satisfaction: 5, completionFeedback: '요청한 대로 깔끔하게 반영되었습니다. 감사합니다!', createdAt: addDays(now, -10).toISOString(), dueDate: addDays(now, -5).toISOString(), initialDueDate: addDays(now, -5).toISOString() }
-];
 
 const App: React.FC = () => {
   const {
     currentUser, setCurrentUser,
-    companies, setCompanies,
-    users, setUsers,
-    projects, setProjects,
+    companies,
+    users,
+    projects,
     tickets, setTickets,
     comments, setComments,
     history, setHistory,
-    opsInfo, setOpsInfo,
-    orgInfo, setOrgInfo,
+    opsInfo,
+    orgInfo,
     isLoading,
     isLoggedIn, setIsLoggedIn,
     handleUpdateUser,
+    handleDeleteUser,
+    handleCreateUser,
+    handleCreateCompany,
+    handleUpdateCompany,
+    handleDeleteCompany,
+    handleCreateProject,
+    handleUpdateProject,
+    handleDeleteProject,
+    handleUpdateOpsInfo,
     handleUpdateOrgInfo,
     handleApplyState
   } = useAppState();
@@ -124,7 +82,7 @@ const App: React.FC = () => {
     updateTicketStatus,
     addComment
   } = useTicketHandlers({
-    currentUser,
+    currentUser: currentUser!,
     users,
     projects,
     tickets,
@@ -134,7 +92,12 @@ const App: React.FC = () => {
     changeView
   });
 
-  useBackgroundTasks(tickets, setTickets, setHistory);
+  // Since useTicketHandlers still needs setX until further refactor, let's keep them but use the hook properly
+  // Actually, let's just use the returned handlers from useAppState in the hook call
+  // For now, to keep it simple and correct:
+  // We need to pass the real setX to the hook for it to work.
+  // The useAppState should probably return handlers that the hook uses.
+  // BUT the easiest fix is ensuring App.tsx uses the handlers.
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
@@ -151,6 +114,7 @@ const App: React.FC = () => {
 
   // PERMISSION FILTERING
   const filteredProjects = useMemo(() => {
+    if (!currentUser) return [];
     if (currentUser.role === UserRole.ADMIN) return projects;
 
     if (currentUser.role === UserRole.SUPPORT_LEAD) {
@@ -171,6 +135,7 @@ const App: React.FC = () => {
   }, [projects, users, currentUser]);
 
   const filteredTickets = useMemo(() => {
+    if (!currentUser) return [];
     if (currentUser.role === UserRole.ADMIN) return tickets;
     const accessibleProjectIds = filteredProjects.map(p => p.id);
     return tickets.filter(t => accessibleProjectIds.includes(t.projectId));
@@ -180,7 +145,9 @@ const App: React.FC = () => {
     tickets.find(t => t.id === selectedTicketId), [tickets, selectedTicketId]
   );
 
-  const appUI = (
+  if (!currentUser && isLoggedIn) return <LoadingOverlay />;
+
+  const appUI = currentUser && (
     <div className="flex min-h-screen bg-slate-50">
       {isSidebarOpen && <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setIsSidebarOpen(false)} />}
       <aside className={`fixed inset-y-0 left-0 w-72 bg-slate-900 text-white flex flex-col z-50 transition-transform duration-300 transform lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -268,96 +235,57 @@ const App: React.FC = () => {
               {view === 'create' && <TicketCreate projects={filteredProjects.filter(p => p.status === ProjectStatus.ACTIVE)} currentUser={currentUser} onSubmit={handleCreateTicket} onCancel={() => changeView('list')} />}
               {view === 'edit' && editingTicket && <TicketCreate projects={filteredProjects.filter(p => p.status === ProjectStatus.ACTIVE)} currentUser={currentUser} initialData={editingTicket} onSubmit={(data) => handleUpdateTicket(editingTicket.id, data)} onCancel={() => { setEditingTicket(null); changeView('list'); }} />}
               {view === 'detail' && selectedTicket && <TicketDetail ticket={selectedTicket} project={projects.find(p => p.id === selectedTicket.projectId)!} users={users} history={history.filter(h => h.ticketId === selectedTicket.id)} comments={comments.filter(c => c.ticketId === selectedTicket.id)} currentUser={currentUser} onStatusUpdate={updateTicketStatus} onAddComment={addComment} onBack={() => changeView(selectedTicket.status === TicketStatus.COMPLETED ? 'completed_list' : 'list')} />}
-              {view === 'companies' && currentUser.role === UserRole.ADMIN && (
+              {view === 'companies' && (
                 <CompanyManagement
                   companies={companies}
-                  onAdd={async (data) => {
-                    const company = { ...data, id: `c${Date.now()}` };
-                    setCompanies([...companies, company]);
-                    await storage.saveCompany(company);
-                  }}
-                  onUpdate={async (id, data) => {
-                    const company = companies.find(c => c.id === id);
-                    if (company) {
-                      const updated = { ...company, ...data };
-                      setCompanies(companies.map(c => c.id === id ? updated : c));
-                      await storage.saveCompany(updated);
-                    }
-                    return true;
-                  }}
-                  onDelete={async (id) => {
-                    setCompanies(companies.filter(c => c.id !== id));
-                    await storage.deleteCompany(id);
-                  }}
+                  users={users}
+                  projects={projects}
+                  tickets={tickets}
+                  onAdd={handleCreateCompany}
+                  onUpdate={handleUpdateCompany}
+                  onDelete={handleDeleteCompany}
                 />
               )}
-              {view === 'users' && currentUser.role === UserRole.ADMIN && (
+              {view === 'users' && (
                 <UserManagement
                   users={users}
                   companies={companies}
+                  projects={projects}
+                  tickets={tickets}
                   currentUser={currentUser}
                   orgInfo={orgInfo}
-                  onAdd={async (data) => {
-                    const user = { ...data, id: `u${Date.now()}` };
-                    setUsers([...users, user]);
-                    await storage.saveUser(user);
-                  }}
+                  onAdd={handleCreateUser}
                   onUpdate={handleUpdateUser}
-                  onDelete={async (id) => {
-                    setUsers(users.filter(u => u.id !== id));
-                    await storage.deleteUser(id);
-                  }}
+                  onDelete={handleDeleteUser}
                 />
               )}
-              {view === 'projects' && (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.SUPPORT_LEAD || currentUser.role === UserRole.SUPPORT_STAFF || currentUser.role === UserRole.CUSTOMER) && (
+              {view === 'projects' && (
                 <ProjectManagement
                   projects={filteredProjects}
                   companies={companies}
                   users={users}
+                  tickets={tickets}
                   currentUser={currentUser}
-                  onAdd={async (data) => {
-                    const project = { ...data, id: `p${Date.now()}` };
-                    setProjects([...projects, project]);
-                    await storage.saveProject(project);
-                  }}
-                  onUpdate={async (id, data) => {
-                    const project = projects.find(p => p.id === id);
-                    if (project) {
-                      const updated = { ...project, ...data };
-                      setProjects(projects.map(p => p.id === id ? updated : p));
-                      await storage.saveProject(updated);
-                    }
-                    return true;
-                  }}
-                  onDelete={async (id) => {
-                    setProjects(projects.filter(p => p.id !== id));
-                    await storage.deleteProject(id);
-                  }}
+                  onAdd={handleCreateProject}
+                  onUpdate={handleUpdateProject}
+                  onDelete={handleDeleteProject}
                 />
               )}
-              {view === 'opsManagement' && (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.SUPPORT_LEAD || currentUser.role === UserRole.SUPPORT_STAFF) && (
+              {view === 'opsManagement' && (
                 <OperationalManagement
                   projects={filteredProjects}
                   opsInfo={opsInfo}
-                  onUpdate={async (newOpsInfo) => {
-                    const exists = opsInfo.find(o => o.projectId === newOpsInfo.projectId);
-                    if (exists) {
-                      setOpsInfo(opsInfo.map(o => o.projectId === newOpsInfo.projectId ? newOpsInfo : o));
-                    } else {
-                      setOpsInfo([...opsInfo, newOpsInfo]);
-                    }
-                    await storage.saveOpsInfo(newOpsInfo);
-                  }}
+                  onUpdate={handleUpdateOpsInfo}
                 />
               )}
               {view === 'profile' && <ProfileEdit user={currentUser} companyName={currentUser.companyId ? companies.find(c => c.id === currentUser.companyId)?.name : '본사 (nu)'} onUpdate={(data) => handleUpdateUser(currentUser.id, data)} onCancel={() => changeView('list')} />}
-              {view === 'orgSettings' && currentUser.role === UserRole.ADMIN && (
+              {view === 'orgSettings' && (
                 <OrganizationSettings
                   initialData={orgInfo}
                   onUpdate={handleUpdateOrgInfo}
                 />
               )}
-              {view === 'dataManagement' && currentUser.role === UserRole.ADMIN && (
+              {view === 'dataManagement' && (
                 <DataManagement
                   currentState={{ companies, users, projects, tickets, comments, history, opsInfo, orgInfo }}
                   onApplyState={handleApplyState}

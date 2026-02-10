@@ -1,19 +1,27 @@
 
 import React, { useState } from 'react';
-import { Company, CompanyStatus } from '../types';
+import { Company, CompanyStatus, User, Project, Ticket } from '../types';
 import { Building2, Plus, Edit2, Trash2, X, Search, MapPin, Briefcase, UserCircle, Power, Check } from 'lucide-react';
+import DeleteConfirmModal from './common/DeleteConfirmModal';
 
 interface Props {
   companies: Company[];
+  users: User[];
+  projects: Project[];
+  tickets: Ticket[];
   onAdd: (companyData: Omit<Company, 'id'>) => void;
   onUpdate: (id: string, companyData: Partial<Company>) => boolean;
   onDelete: (id: string) => void;
 }
 
-const CompanyManagement: React.FC<Props> = ({ companies, onAdd, onUpdate, onDelete }) => {
+const CompanyManagement: React.FC<Props> = ({ companies, users, projects, tickets, onAdd, onUpdate, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+
+  // Delete Confirmation State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingCompany, setDeletingCompany] = useState<Company | null>(null);
 
   // Form State
   const [formData, setFormData] = useState<Omit<Company, 'id'>>({
@@ -25,21 +33,21 @@ const CompanyManagement: React.FC<Props> = ({ companies, onAdd, onUpdate, onDele
     status: CompanyStatus.ACTIVE
   });
 
-  const filteredCompanies = companies.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredCompanies = companies.filter(c =>
+    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.representative?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.industry?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleOpenAddModal = () => {
     setEditingCompany(null);
-    setFormData({ 
-      name: '', 
-      representative: '', 
-      industry: '', 
-      address: '', 
-      remarks: '', 
-      status: CompanyStatus.ACTIVE 
+    setFormData({
+      name: '',
+      representative: '',
+      industry: '',
+      address: '',
+      remarks: '',
+      status: CompanyStatus.ACTIVE
     });
     setIsModalOpen(true);
   };
@@ -80,20 +88,46 @@ const CompanyManagement: React.FC<Props> = ({ companies, onAdd, onUpdate, onDele
     setFormData(prev => ({ ...prev, status: newStatus }));
   };
 
+  const handleOpenDeleteModal = (company: Company) => {
+    setDeletingCompany(company);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deletingCompany) {
+      onDelete(deletingCompany.id);
+      setIsDeleteModalOpen(false);
+      setDeletingCompany(null);
+    }
+  };
+
+  const getRelatedData = (company: Company) => {
+    return [
+      { label: '소속 사용자', count: users.filter(u => u.companyId === company.id).length },
+      { label: '배정된 프로젝트', count: projects.filter(p => p.clientId === company.id).length },
+      {
+        label: '관련 티켓', count: tickets.filter(t => {
+          const project = projects.find(p => p.id === t.projectId);
+          return project?.clientId === company.id;
+        }).length
+      }
+    ];
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="기관명, 대표자, 업종 검색..." 
+          <input
+            type="text"
+            placeholder="기관명, 대표자, 업종 검색..."
             className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-80 shadow-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button 
+        <button
           onClick={handleOpenAddModal}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-md"
         >
@@ -142,15 +176,15 @@ const CompanyManagement: React.FC<Props> = ({ companies, onAdd, onUpdate, onDele
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
+                        <button
                           onClick={() => handleOpenEditModal(company)}
                           className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                           title="수정"
                         >
                           <Edit2 size={16} />
                         </button>
-                        <button 
-                          onClick={() => onDelete(company.id)}
+                        <button
+                          onClick={() => handleOpenDeleteModal(company)}
                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                           title="삭제"
                         >
@@ -171,15 +205,15 @@ const CompanyManagement: React.FC<Props> = ({ companies, onAdd, onUpdate, onDele
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
               <h3 className="text-lg font-bold text-slate-800">{editingCompany ? '고객사 정보 수정' : '신규 고객사 등록'}</h3>
-              <button 
-                type="button" 
-                onClick={() => setIsModalOpen(false)} 
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
                 className="p-1 hover:bg-slate-100 rounded-full transition-colors"
               >
                 <X size={20} className="text-slate-400" />
               </button>
             </div>
-            
+
             <form onSubmit={handleSubmit}>
               <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
                 {/* Status Toggle UI */}
@@ -194,26 +228,24 @@ const CompanyManagement: React.FC<Props> = ({ companies, onAdd, onUpdate, onDele
                     </div>
                   </div>
                   <div className="flex bg-white p-1 rounded-lg border border-slate-200 shadow-inner">
-                    <button 
+                    <button
                       type="button"
                       onClick={() => toggleStatus(CompanyStatus.ACTIVE)}
-                      className={`relative flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
-                        formData.status === CompanyStatus.ACTIVE 
-                        ? 'bg-blue-600 text-white shadow-md' 
+                      className={`relative flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-bold transition-all ${formData.status === CompanyStatus.ACTIVE
+                        ? 'bg-blue-600 text-white shadow-md'
                         : 'text-slate-400 hover:text-slate-600'
-                      }`}
+                        }`}
                     >
                       {formData.status === CompanyStatus.ACTIVE && <Check size={12} />}
                       활성
                     </button>
-                    <button 
+                    <button
                       type="button"
                       onClick={() => toggleStatus(CompanyStatus.INACTIVE)}
-                      className={`relative flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
-                        formData.status === CompanyStatus.INACTIVE 
-                        ? 'bg-slate-600 text-white shadow-md' 
+                      className={`relative flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-bold transition-all ${formData.status === CompanyStatus.INACTIVE
+                        ? 'bg-slate-600 text-white shadow-md'
                         : 'text-slate-400 hover:text-slate-600'
-                      }`}
+                        }`}
                     >
                       {formData.status === CompanyStatus.INACTIVE && <Check size={12} />}
                       비활성
@@ -226,9 +258,9 @@ const CompanyManagement: React.FC<Props> = ({ companies, onAdd, onUpdate, onDele
                     <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">기관명 *</label>
                     <div className="relative">
                       <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                      <input 
+                      <input
                         required
-                        type="text" 
+                        type="text"
                         className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-shadow"
                         placeholder="기관명을 입력하세요"
                         value={formData.name}
@@ -242,8 +274,8 @@ const CompanyManagement: React.FC<Props> = ({ companies, onAdd, onUpdate, onDele
                       <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">대표자</label>
                       <div className="relative">
                         <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                           placeholder="대표자명"
                           value={formData.representative}
@@ -255,8 +287,8 @@ const CompanyManagement: React.FC<Props> = ({ companies, onAdd, onUpdate, onDele
                       <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">업종</label>
                       <div className="relative">
                         <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                           placeholder="업종명"
                           value={formData.industry}
@@ -270,8 +302,8 @@ const CompanyManagement: React.FC<Props> = ({ companies, onAdd, onUpdate, onDele
                     <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">주소</label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                         placeholder="기관 주소"
                         value={formData.address}
@@ -282,7 +314,7 @@ const CompanyManagement: React.FC<Props> = ({ companies, onAdd, onUpdate, onDele
 
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">비고</label>
-                    <textarea 
+                    <textarea
                       className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm resize-none transition-shadow"
                       rows={3}
                       placeholder="기타 참고 사항"
@@ -294,14 +326,14 @@ const CompanyManagement: React.FC<Props> = ({ companies, onAdd, onUpdate, onDele
               </div>
 
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="px-6 py-2 text-slate-600 font-bold hover:bg-slate-200 rounded-lg transition-colors"
                 >
                   취소
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-8 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-100 active:scale-95"
                 >
@@ -311,6 +343,17 @@ const CompanyManagement: React.FC<Props> = ({ companies, onAdd, onUpdate, onDele
             </form>
           </div>
         </div>
+      )}
+      {isDeleteModalOpen && deletingCompany && (
+        <DeleteConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={confirmDelete}
+          title="고객사 삭제 확인"
+          targetName={deletingCompany.name}
+          relatedData={getRelatedData(deletingCompany)}
+          description="고객사 삭제 시 해당 고객사에 연결된 기본 정보가 유실될 수 있습니다."
+        />
       )}
     </div>
   );

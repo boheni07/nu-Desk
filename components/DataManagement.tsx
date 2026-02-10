@@ -3,9 +3,9 @@ import React, { useState, useRef } from 'react';
 // Redefining Data Management with AppState from types.ts
 import {
   Company, User, Project, Ticket, Comment, HistoryEntry,
-  TicketStatus, UserRole, OperationalInfo, AppState, OrganizationInfo
+  TicketStatus, UserRole, UserStatus, OperationalInfo, AppState, OrganizationInfo
 } from '../types';
-import { initialCompanies, initialUsers, initialProjects, getInitialTickets, defaultOrgInfo } from '../App';
+import { initialCompanies, initialUsers, initialProjects, getInitialTickets, defaultOrgInfo } from '../hooks/useAppState';
 import { Download, Upload, RotateCcw, Trash2, CheckCircle2, AlertTriangle, Loader2, Database, HardDrive, FileJson, X } from 'lucide-react';
 import { addDays } from 'date-fns';
 
@@ -191,7 +191,7 @@ const DataManagement: React.FC<Props> = ({ currentState, onApplyState }) => {
           { id: `sw-${p.id}-2`, usage: 'DB', productVersion: 'PostgreSQL 15', installPath: '/var/lib/postgresql', manufacturer: 'PostgreSQL', techSupport: 'Open Source', notes: 'Daily backup configured', remarks: '' }
         ],
         access: [
-          { id: `acc-${p.id}-1`, target: 'Admin Console', loginId: 'admin', password1: '********', password2: '', usage: 'System Management', notes: 'VPN Access Required', remarks: '' }
+          { id: `acc-${p.id}-1`, target: 'Admin Console', loginId: 'admin', password1: '********', password2: '', usage: 'System Management', notes: 'VPN Access Required', accessPath: 'https://admin.example.com', remarks: '' }
         ],
         otherNotes: `${p.name} 환경을 위한 기본 운영 정보가 생성되었습니다. 특이사항 발생 시 업데이트가 필요합니다.`
       }));
@@ -221,22 +221,29 @@ const DataManagement: React.FC<Props> = ({ currentState, onApplyState }) => {
     await simulateProgress(['모든 레코드 검색 중...', '티켓 및 커뮤니케이션 데이터 영구 삭제 중...', '프로젝트 및 인프라 매핑 해제 중...', '관리자 및 본사 계정 보호 중...', '데이터베이스 최적화 중...']);
 
     try {
-      // 본사(c1), 관리자들(u1, u2, u3)은 보존
-      const preservedCompanies = initialCompanies.filter(c => c.id === 'c1');
-      const preservedUsers = initialUsers.filter(u => u.loginId === 'admin1' || u.loginId === 'support1' || u.loginId === 'admin2');
+      // 모든 고객사 및 데이터 삭제 (onApplyState 내부에서 clearAllData 호출됨)
+
+      // 모든 사용자 삭제 및 신규 관리자(admin/0000) 생성
+      const defaultAdmin: User = {
+        ...initialUsers[0],
+        id: 'admin',
+        loginId: 'admin',
+        password: '0000',
+        name: '시스템 관리자',
+      };
 
       await onApplyState({
-        companies: preservedCompanies,
-        users: preservedUsers,
+        companies: [],
+        users: [defaultAdmin],
         projects: [],
         tickets: [],
         comments: [],
         history: [],
         opsInfo: [],
-        orgInfo: defaultOrgInfo
+        orgInfo: currentState.orgInfo
       });
 
-      setResult({ success: true, message: '모든 서비스 데이터가 초기화되었습니다. 마스터 정보와 관리자 권한만 유지됩니다.' });
+      setResult({ success: true, message: '모든 서비스 데이터가 초기화되었습니다. 관리자 계정(admin/0000)과 기관 정보만 유지됩니다.' });
     } catch (err) {
       setResult({ success: false, message: '초기화 중 오류가 발생했습니다.' });
     } finally {

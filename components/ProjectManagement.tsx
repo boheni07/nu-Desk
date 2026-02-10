@@ -1,26 +1,32 @@
 
 import React, { useState } from 'react';
-import { Project, Company, User, UserRole, ProjectStatus } from '../types';
+import { Project, Company, User, UserRole, ProjectStatus, Ticket } from '../types';
 import {
   Plus, Edit2, Trash2, X, Search, Briefcase, Calendar,
   User as UserIcon, Building, MessageSquare, ShieldCheck,
   Power, Check
 } from 'lucide-react';
+import DeleteConfirmModal from './common/DeleteConfirmModal';
 
 interface Props {
   projects: Project[];
   companies: Company[];
   users: User[];
+  tickets: Ticket[];
   currentUser: User;
   onAdd: (projectData: Omit<Project, 'id'>) => void;
   onUpdate: (id: string, projectData: Partial<Project>) => boolean;
   onDelete: (id: string) => void;
 }
 
-const ProjectManagement: React.FC<Props> = ({ projects, companies, users, currentUser, onAdd, onUpdate, onDelete }) => {
+const ProjectManagement: React.FC<Props> = ({ projects, companies, users, tickets, currentUser, onAdd, onUpdate, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+
+  // Delete Confirmation State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingProject, setDeletingProject] = useState<Project | null>(null);
 
   const isAdmin = currentUser.role === UserRole.ADMIN;
 
@@ -109,6 +115,25 @@ const ProjectManagement: React.FC<Props> = ({ projects, companies, users, curren
       onAdd(formData);
       setIsModalOpen(false);
     }
+  };
+
+  const handleOpenDeleteModal = (project: Project) => {
+    setDeletingProject(project);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deletingProject) {
+      onDelete(deletingProject.id);
+      setIsDeleteModalOpen(false);
+      setDeletingProject(null);
+    }
+  };
+
+  const getRelatedData = (project: Project) => {
+    return [
+      { label: '연결된 티켓', count: tickets.filter(t => t.projectId === project.id).length }
+    ];
   };
 
   const toggleSelection = (id: string, field: 'customerContactIds' | 'supportStaffIds') => {
@@ -216,7 +241,7 @@ const ProjectManagement: React.FC<Props> = ({ projects, companies, users, curren
                             <button onClick={() => handleOpenEditModal(project)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="수정">
                               <Edit2 size={16} />
                             </button>
-                            <button onClick={() => onDelete(project.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="삭제">
+                            <button onClick={() => handleOpenDeleteModal(project)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="삭제">
                               <Trash2 size={16} />
                             </button>
                           </>
@@ -430,6 +455,17 @@ const ProjectManagement: React.FC<Props> = ({ projects, companies, users, curren
             </form>
           </div>
         </div>
+      )}
+      {isDeleteModalOpen && deletingProject && (
+        <DeleteConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={confirmDelete}
+          title="프로젝트 삭제 확인"
+          targetName={deletingProject.name}
+          relatedData={getRelatedData(deletingProject)}
+          description="프로젝트 삭제 시 해당 프로젝트와 연결된 티켓 이력이 상실될 수 있습니다."
+        />
       )}
     </div>
   );

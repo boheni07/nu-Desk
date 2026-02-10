@@ -156,6 +156,7 @@ export interface AccessInfo {
   password2: string;
   usage: string;
   notes: string;
+  accessPath: string;
   remarks: string;
 }
 

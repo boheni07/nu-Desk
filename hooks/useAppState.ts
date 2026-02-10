@@ -14,7 +14,7 @@ export const initialCompanies: Company[] = [
 ];
 
 export const initialUsers: User[] = [
-    { id: 'u1', loginId: 'admin1', password: 'password123', name: '홍길동 관리자', role: UserRole.ADMIN, status: UserStatus.ACTIVE, mobile: '010-1111-2222', email: 'admin@nu.com' },
+    { id: 'u1', loginId: 'admin', password: '0000', name: '시스템 관리자', role: UserRole.ADMIN, status: UserStatus.ACTIVE, mobile: '010-1111-2222', email: 'admin@nu.com' },
     { id: 'u2', loginId: 'support1', password: 'password123', name: '이지원 지원팀장', role: UserRole.SUPPORT_LEAD, status: UserStatus.ACTIVE, department: '기술지원1팀', mobile: '010-3333-4444', email: 'support1@nu.com' },
     { id: 'u3', loginId: 'support2', password: 'password123', name: '박기술 엔지니어', role: UserRole.SUPPORT_STAFF, status: UserStatus.ACTIVE, department: '기술지원1팀', mobile: '010-7777-8888', email: 'support2@nu.com' },
     { id: 'u4', loginId: 'customer1', password: 'password123', name: '김고객 과장', role: UserRole.CUSTOMER, status: UserStatus.ACTIVE, companyId: 'c2', phone: '02-123-4567', mobile: '010-5555-6666', email: 'customer1@mirai.com' },
@@ -49,7 +49,7 @@ export const getInitialTickets = (now: Date): Ticket[] => [
 ];
 
 export const useAppState = () => {
-    const [currentUser, setCurrentUser] = useState<User>(initialUsers[1]);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [companies, setCompanies] = useState<Company[]>(initialCompanies);
     const [users, setUsers] = useState<User[]>(initialUsers);
     const [projects, setProjects] = useState<Project[]>(initialProjects);
@@ -57,7 +57,7 @@ export const useAppState = () => {
     const [comments, setComments] = useState<Comment[]>([]);
     const [history, setHistory] = useState<HistoryEntry[]>([]);
     const [opsInfo, setOpsInfo] = useState<OperationalInfo[]>([]);
-    const [orgInfo, setOrgInfo] = useState<OrganizationInfo | undefined>(undefined);
+    const [orgInfo, setOrgInfo] = useState<OrganizationInfo>(defaultOrgInfo);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -117,6 +117,9 @@ export const useAppState = () => {
                         note: '티켓이 신규 등록되었습니다.'
                     }));
 
+                    setCompanies(initialCompanies);
+                    setUsers(initialUsers);
+                    setProjects(initialProjects);
                     setTickets(sampleTickets);
                     setHistory(sampleHistory);
 
@@ -136,26 +139,156 @@ export const useAppState = () => {
         initApp();
     }, []);
 
+    // --- Handlers with DB-First Consistency ---
     const handleUpdateUser = async (id: string, userData: Partial<User>) => {
-        setUsers(prev => {
-            const updated = prev.map(u => u.id === id ? { ...u, ...userData } : u);
-            const updatedUser = updated.find(u => u.id === id);
-            if (id === currentUser.id && updatedUser) {
-                setCurrentUser(updatedUser);
-            }
-            if (updatedUser) storage.saveUser(updatedUser);
-            return updated;
-        });
+        try {
+            const currentList = [...users];
+            const targetIndex = currentList.findIndex(u => u.id === id);
+            if (targetIndex === -1) return;
+            const updatedUser = { ...currentList[targetIndex], ...userData };
+            await storage.saveUser(updatedUser);
+            setUsers(prev => prev.map(u => u.id === id ? updatedUser : u));
+            if (currentUser && id === currentUser.id) setCurrentUser(updatedUser);
+        } catch (err) {
+            console.error('User update error:', err);
+            alert('사용자 정보 저장 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleCreateUser = async (data: Omit<User, 'id'>) => {
+        try {
+            const user = { ...data, id: `u${Date.now()}` } as User;
+            await storage.saveUser(user);
+            setUsers(prev => [...prev, user]);
+        } catch (err) {
+            console.error('User creation error:', err);
+            alert('사용자 등록 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleDeleteUser = async (id: string) => {
+        try {
+            await storage.deleteUser(id);
+            setUsers(prev => prev.filter(u => u.id !== id));
+        } catch (err) {
+            console.error('User delete error:', err);
+            alert('사용자 삭제 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleCreateCompany = async (data: Omit<Company, 'id'>) => {
+        try {
+            const company = { ...data, id: `c${Date.now()}` } as Company;
+            await storage.saveCompany(company);
+            setCompanies(prev => [...prev, company]);
+        } catch (err) {
+            console.error('Company creation error:', err);
+            alert('고객사 등록 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleUpdateCompany = async (id: string, data: Partial<Company>) => {
+        try {
+            const company = companies.find(c => c.id === id);
+            if (!company) return;
+            const updated = { ...company, ...data };
+            await storage.saveCompany(updated);
+            setCompanies(prev => prev.map(c => c.id === id ? updated : c));
+        } catch (err) {
+            console.error('Company update error:', err);
+            alert('고객사 정보 수정 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleDeleteCompany = async (id: string) => {
+        try {
+            await storage.deleteCompany(id);
+            setCompanies(prev => prev.filter(c => c.id !== id));
+        } catch (err) {
+            console.error('Company delete error:', err);
+            alert('고객사 삭제 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleCreateProject = async (data: Omit<Project, 'id'>) => {
+        try {
+            const project = { ...data, id: `p${Date.now()}` } as Project;
+            await storage.saveProject(project);
+            setProjects(prev => [...prev, project]);
+        } catch (err) {
+            console.error('Project creation error:', err);
+            alert('프로젝트 등록 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleUpdateProject = async (id: string, data: Partial<Project>) => {
+        try {
+            const project = projects.find(p => p.id === id);
+            if (!project) return;
+            const updated = { ...project, ...data };
+            await storage.saveProject(updated);
+            setProjects(prev => prev.map(p => p.id === id ? updated : p));
+        } catch (err) {
+            console.error('Project update error:', err);
+            alert('프로젝트 정보 수정 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleDeleteProject = async (id: string) => {
+        try {
+            await storage.deleteProject(id);
+            setProjects(prev => prev.filter(p => p.id !== id));
+        } catch (err) {
+            console.error('Project delete error:', err);
+            alert('프로젝트 삭제 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleUpdateOpsInfo = async (newOpsInfo: OperationalInfo) => {
+        try {
+            await storage.saveOpsInfo(newOpsInfo);
+            setOpsInfo(prev => {
+                const exists = prev.find(o => o.projectId === newOpsInfo.projectId);
+                if (exists) return prev.map(o => o.projectId === newOpsInfo.projectId ? newOpsInfo : o);
+                return [...prev, newOpsInfo];
+            });
+        } catch (err) {
+            console.error('Ops info update error:', err);
+            alert('운영 정보 저장 중 오류가 발생했습니다.');
+        }
     };
 
     const handleUpdateOrgInfo = async (data: OrganizationInfo) => {
-        setOrgInfo(data);
-        await storage.saveOrganizationInfo(data);
+        try {
+            await storage.saveOrganizationInfo(data);
+            setOrgInfo(data);
+        } catch (err) {
+            console.error('Org info update error:', err);
+            alert('기관 정보 저장 중 오류가 발생했습니다.');
+        }
     };
 
     const handleApplyState = async (newState: AppState) => {
         setIsLoading(true);
         try {
+            // 1. DB 모든 데이터 초기화
+            await storage.clearAllData();
+
+            // 2. 외래 키 제약 조건을 고려하여 순차적 저장
+            await storage.saveCompanies(newState.companies);
+            await storage.saveUsers(newState.users);
+            await storage.saveProjects(newState.projects);
+            await storage.saveTickets(newState.tickets);
+
+            // 3. 종속 데이터 저장
+            await Promise.all([
+                storage.saveComments(newState.comments),
+                storage.saveHistoryEntries(newState.history),
+                newState.opsInfo ? storage.saveOpsInfos(newState.opsInfo) : Promise.resolve(),
+                newState.orgInfo ? storage.saveOrganizationInfo(newState.orgInfo) : Promise.resolve(),
+            ]);
+
+            // 2. DB 성공 시에만 로컬 UI 상태 업데이트
             setCompanies(newState.companies);
             setUsers(newState.users);
             setProjects(newState.projects);
@@ -165,19 +298,12 @@ export const useAppState = () => {
             if (newState.opsInfo) setOpsInfo(newState.opsInfo);
             if (newState.orgInfo) setOrgInfo(newState.orgInfo);
 
-            const foundUser = newState.users.find(u => u.id === currentUser.id) || newState.users[0];
-            setCurrentUser(foundUser);
+            const foundUser = newState.users.find(u => (currentUser && u.id === currentUser.id)) || newState.users[0];
+            if (foundUser) setCurrentUser(foundUser);
 
-            await storage.saveCompanies(newState.companies);
-            await storage.saveUsers(newState.users);
-            await storage.saveProjects(newState.projects);
-            await storage.saveTickets(newState.tickets);
-            await storage.saveComments(newState.comments);
-            await storage.saveHistoryEntries(newState.history);
-            if (newState.opsInfo) await storage.saveOpsInfos(newState.opsInfo);
-            if (newState.orgInfo) await storage.saveOrganizationInfo(newState.orgInfo);
         } catch (err) {
             console.error('State sync error:', err);
+            alert('데이터 동기화 중 오류가 발생했습니다. DB 연결을 확인해주세요.');
         } finally {
             setIsLoading(false);
         }
@@ -195,7 +321,16 @@ export const useAppState = () => {
         orgInfo, setOrgInfo,
         isLoading, setIsLoading,
         isLoggedIn, setIsLoggedIn,
+        handleCreateUser,
         handleUpdateUser,
+        handleDeleteUser,
+        handleCreateCompany,
+        handleUpdateCompany,
+        handleDeleteCompany,
+        handleCreateProject,
+        handleUpdateProject,
+        handleDeleteProject,
+        handleUpdateOpsInfo,
         handleUpdateOrgInfo,
         handleApplyState
     };

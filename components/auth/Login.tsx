@@ -67,7 +67,7 @@ const Login: React.FC<LoginProps> = ({ users, onLogin }) => {
                                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-300"
                                 placeholder="아이디를 입력하세요"
                                 value={loginId}
-                                onChange={(e) => setLoginId(e.target.value)}
+                                onChange={(e) => setLoginId(e.target.value.trim())}
                             />
                         </div>
 

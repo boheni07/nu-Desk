@@ -15,12 +15,30 @@ export const fetchCompanies = async (): Promise<Company[]> => {
 };
 
 export const saveCompany = async (company: Company) => {
-    const { error } = await supabase.from('companies').upsert(company);
+    const data: any = {
+        id: company.id,
+        name: company.name,
+        representative: company.representative,
+        industry: company.industry,
+        address: company.address,
+        remarks: company.remarks,
+        status: company.status
+    };
+    const { error } = await supabase.from('companies').upsert(data);
     if (error) throw error;
 };
 
 export const saveCompanies = async (companies: Company[]) => {
-    const { error } = await supabase.from('companies').upsert(companies);
+    const mapped = companies.map(company => ({
+        id: company.id,
+        name: company.name,
+        representative: company.representative,
+        industry: company.industry,
+        address: company.address,
+        remarks: company.remarks,
+        status: company.status
+    }));
+    const { error } = await supabase.from('companies').upsert(mapped);
     if (error) throw error;
 };
 
@@ -43,36 +61,41 @@ export const fetchUsers = async (): Promise<User[]> => {
 };
 
 export const saveUser = async (user: User) => {
-    const { error } = await supabase.from('users').upsert({
+    const data: any = {
         id: user.id,
         login_id: user.loginId,
         password: user.password,
         name: user.name,
         role: user.role,
         status: user.status,
-        company_id: user.companyId,
-        department: user.department,
-        mobile: user.mobile,
-        email: user.email,
-        phone: user.phone
-    });
+    };
+    if (user.companyId) data.company_id = user.companyId;
+    if (user.department) data.department = user.department;
+    if (user.mobile) data.mobile = user.mobile;
+    if (user.email) data.email = user.email;
+    if (user.phone) data.phone = user.phone;
+
+    const { error } = await supabase.from('users').upsert(data);
     if (error) throw error;
 };
 
 export const saveUsers = async (users: User[]) => {
-    const mapped = users.map(user => ({
-        id: user.id,
-        login_id: user.loginId,
-        password: user.password,
-        name: user.name,
-        role: user.role,
-        status: user.status,
-        company_id: user.companyId,
-        department: user.department,
-        mobile: user.mobile,
-        email: user.email,
-        phone: user.phone
-    }));
+    const mapped = users.map(user => {
+        const data: any = {
+            id: user.id,
+            login_id: user.loginId,
+            password: user.password,
+            name: user.name,
+            role: user.role,
+            status: user.status,
+        };
+        if (user.companyId) data.company_id = user.companyId;
+        if (user.department) data.department = user.department;
+        if (user.mobile) data.mobile = user.mobile;
+        if (user.email) data.email = user.email;
+        if (user.phone) data.phone = user.phone;
+        return data;
+    });
     const { error } = await supabase.from('users').upsert(mapped);
     if (error) throw error;
 };
@@ -162,7 +185,7 @@ export const fetchTickets = async (): Promise<Ticket[]> => {
 };
 
 export const saveTicket = async (ticket: Ticket) => {
-    const { error } = await supabase.from('tickets').upsert({
+    const data: any = {
         id: ticket.id,
         title: ticket.title,
         description: ticket.description,
@@ -188,7 +211,8 @@ export const saveTicket = async (ticket: Ticket) => {
         intake_method: ticket.intakeMethod,
         request_date: ticket.requestDate,
         expected_completion_delay_reason: ticket.expectedCompletionDelayReason
-    });
+    };
+    const { error } = await supabase.from('tickets').upsert(data);
     if (error) throw error;
 };
 
@@ -391,4 +415,17 @@ export const saveOrganizationInfo = async (info: OrganizationInfo) => {
         updated_at: new Date().toISOString()
     });
     if (error) throw error;
+};
+
+// --- 9. Global Operations ---
+export const clearAllData = async () => {
+    // Foreign Key 관계를 고려하여 하위 데이터부터 삭제
+    await supabase.from('comments').delete().neq('id', '_');
+    await supabase.from('history').delete().neq('id', '_');
+    await supabase.from('tickets').delete().neq('id', '_');
+    await supabase.from('operational_info').delete().neq('project_id', '_');
+    await supabase.from('projects').delete().neq('id', '_');
+    await supabase.from('users').delete().neq('id', '_');
+    await supabase.from('companies').delete().neq('id', '_');
+    // organization_info는 유지하거나 필요 시 별도 처리
 };

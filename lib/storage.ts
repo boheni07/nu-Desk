@@ -49,9 +49,22 @@ export const deleteCompany = async (id: string) => {
 
 // --- 2. Users (사용자) ---
 export const fetchUsers = async (): Promise<User[]> => {
-    const { data, error } = await supabase.from('users').select('*');
-    if (error) throw error;
-    // DB의 snake_case와 코드의 camelCase 매핑 (supabase-js 자동변환이 안 될 경우 대비)
+    const { data, error, count } = await supabase
+        .from('users')
+        .select('*', { count: 'exact' });
+
+    if (error) {
+        console.error('[Supabase Error] users 조회 실패:', error.message);
+        throw error;
+    }
+
+    console.log(`[Supabase Debug] users 페칭 결과 - 데이터: ${data?.length || 0}건, 실제 전체 카운트: ${count}건`);
+
+    if (count !== null && (data?.length || 0) < count) {
+        console.warn(`[Supabase Warn] RLS 필터링 활성화 가능성: 전체 ${count}건 중 ${data?.length || 0}건만 조회됨.`);
+    }
+
+    // DB의 snake_case와 코드의 camelCase 매핑
     return (data || []).map(u => ({
         ...u,
         loginId: u.login_id,

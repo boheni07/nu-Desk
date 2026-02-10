@@ -7,6 +7,17 @@ import { Company, User, Project, Ticket, Comment, HistoryEntry, OperationalInfo,
  * 각 테이블별로 독립적인 페치 및 저장 기능을 제공합니다.
  */
 
+// --- Utility: Convert Empty String to Null for DB Consistency ---
+const toDbData = (data: any) => {
+    const cleaned: any = {};
+    Object.keys(data).forEach(key => {
+        const val = data[key];
+        // 빈 문자열인 경우 null로 변환하여 DB(Postgres)의 타입 오류 방지
+        cleaned[key] = val === '' ? null : val;
+    });
+    return cleaned;
+};
+
 // --- 1. Companies (고객사) ---
 export const fetchCompanies = async (): Promise<Company[]> => {
     const { data, error } = await supabase.from('companies').select('*');
@@ -139,26 +150,29 @@ export const fetchProjects = async (): Promise<Project[]> => {
 };
 
 export const saveProject = async (project: Project) => {
-    const { error } = await supabase.from('projects').upsert({
+    const data = toDbData({
         id: project.id,
         name: project.name,
         client_id: project.clientId,
         description: project.description,
+        remarks: project.remarks,
         start_date: project.startDate,
         end_date: project.endDate,
         status: project.status,
         customer_contact_ids: project.customerContactIds,
         support_staff_ids: project.supportStaffIds
     });
+    const { error } = await supabase.from('projects').upsert(data);
     if (error) throw error;
 };
 
 export const saveProjects = async (projects: Project[]) => {
-    const mapped = projects.map(project => ({
+    const mapped = projects.map(project => toDbData({
         id: project.id,
         name: project.name,
         client_id: project.clientId,
         description: project.description,
+        remarks: project.remarks,
         start_date: project.startDate,
         end_date: project.endDate,
         status: project.status,
@@ -204,7 +218,7 @@ export const fetchTickets = async (): Promise<Ticket[]> => {
 };
 
 export const saveTicket = async (ticket: Ticket) => {
-    const data: any = {
+    const data = toDbData({
         id: ticket.id,
         title: ticket.title,
         description: ticket.description,
@@ -230,13 +244,13 @@ export const saveTicket = async (ticket: Ticket) => {
         intake_method: ticket.intakeMethod,
         request_date: ticket.requestDate,
         expected_completion_delay_reason: ticket.expectedCompletionDelayReason
-    };
+    });
     const { error } = await supabase.from('tickets').upsert(data);
     if (error) throw error;
 };
 
 export const saveTickets = async (tickets: Ticket[]) => {
-    const mapped = tickets.map(ticket => ({
+    const mapped = tickets.map(ticket => toDbData({
         id: ticket.id,
         title: ticket.title,
         description: ticket.description,

@@ -8,9 +8,10 @@ interface LoginProps {
     dataSource?: 'supabase' | 'mock';
     isConfigured?: boolean;
     dbError?: string | null;
+    userCount?: number | null;
 }
 
-const Login: React.FC<LoginProps> = ({ users, onLogin, dataSource, isConfigured, dbError }) => {
+const Login: React.FC<LoginProps> = ({ users, onLogin, dataSource, isConfigured, dbError, userCount }) => {
     const [loginId, setLoginId] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -139,7 +140,25 @@ const Login: React.FC<LoginProps> = ({ users, onLogin, dataSource, isConfigured,
                             </div>
                         )}
 
-                        {isConfigured && users.length === 0 && !isSubmitting && !dbError && (
+                        {isConfigured && userCount !== null && userCount > 0 && users.length === 0 && !isSubmitting && !dbError && (
+                            <div className="p-6 bg-amber-50 border-2 border-amber-100 rounded-[2rem] space-y-4 animate-in slide-in-from-top-4 duration-500">
+                                <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 mb-2">
+                                    <ShieldCheck size={24} />
+                                </div>
+                                <div className="space-y-1">
+                                    <h3 className="text-sm font-black text-amber-900 uppercase tracking-tight">Access Restricted (RLS)</h3>
+                                    <p className="text-[11px] text-amber-600 font-bold leading-relaxed">
+                                        DB에 {userCount}명의 유저가 감지되었으나, 보안 정책(RLS)으로 인해 정보를 읽어올 수 없습니다.<br />
+                                        Supabase SQL Editor에서 **보안 정책(Policy)**을 전면 허용으로 재설정해 주세요.
+                                    </p>
+                                </div>
+                                <div className="pt-2 text-[9px] text-amber-500 font-bold font-mono bg-white/50 p-2 rounded-lg border border-amber-100">
+                                    Hint: DISABLE ROW LEVEL SECURITY;
+                                </div>
+                            </div>
+                        )}
+
+                        {isConfigured && users.length === 0 && !isSubmitting && !dbError && (userCount === null || userCount === 0) && (
                             <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl space-y-2">
                                 <div className="flex items-center gap-2 text-amber-700">
                                     <AlertCircle size={16} />
@@ -154,8 +173,8 @@ const Login: React.FC<LoginProps> = ({ users, onLogin, dataSource, isConfigured,
 
                         <button
                             type="submit"
-                            disabled={isSubmitting || !isConfigured || (users.length === 0 && isConfigured)}
-                            className={`w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all active:scale-95 group relative overflow-hidden ${isSubmitting || !isConfigured || (users.length === 0 && isConfigured) ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+                            disabled={isSubmitting || !isConfigured || (users.length === 0 && isConfigured && userCount === 0)}
+                            className={`w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all active:scale-95 group relative overflow-hidden ${isSubmitting || !isConfigured || (users.length === 0 && isConfigured && userCount === 0) ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'}`}
                         >
                             <div className="flex items-center justify-center gap-3">
                                 {isSubmitting ? (
@@ -179,7 +198,7 @@ const Login: React.FC<LoginProps> = ({ users, onLogin, dataSource, isConfigured,
                             <div className="w-px h-2 bg-slate-200" />
                             <div className="flex items-center gap-1.5">
                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                                    Users: {users.length}
+                                    Users: {users.length}{userCount !== null && userCount > users.length ? ` / Visible: ${userCount}` : ''}
                                 </span>
                             </div>
                         </div>

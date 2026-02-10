@@ -66,7 +66,8 @@ const App: React.FC = () => {
     handleUpdateOrgInfo,
     handleApplyState,
     dataSource,
-    dbError
+    dbError,
+    userCount
   } = useAppState();
 
   const [view, setView] = useState<'list' | 'completed_list' | 'create' | 'edit' | 'detail' | 'companies' | 'users' | 'projects' | 'profile' | 'dataManagement' | 'opsManagement' | 'orgSettings'>('list');
@@ -288,6 +289,7 @@ const App: React.FC = () => {
             dataSource={dataSource}
             isConfigured={isConfigured}
             dbError={dbError}
+            userCount={userCount}
           />
         ) : appUI
       )}

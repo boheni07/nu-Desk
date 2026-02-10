@@ -48,7 +48,7 @@ export const deleteCompany = async (id: string) => {
 };
 
 // --- 2. Users (사용자) ---
-export const fetchUsers = async (): Promise<User[]> => {
+export const fetchUsersRaw = async (): Promise<{ data: any[] | null, count: number | null }> => {
     const { data, error, count } = await supabase
         .from('users')
         .select('*', { count: 'exact' });
@@ -57,6 +57,12 @@ export const fetchUsers = async (): Promise<User[]> => {
         console.error('[Supabase Error] users 조회 실패:', error.message);
         throw error;
     }
+
+    return { data, count };
+};
+
+export const fetchUsers = async (): Promise<User[]> => {
+    const { data, count } = await fetchUsersRaw();
 
     console.log(`[Supabase Debug] users 페칭 결과 - 데이터: ${data?.length || 0}건, 실제 전체 카운트: ${count}건`);
 

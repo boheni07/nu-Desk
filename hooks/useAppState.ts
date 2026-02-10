@@ -67,6 +67,7 @@ export const useAppState = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [dataSource, setDataSource] = useState<'supabase' | 'mock'>(isConfigured ? 'supabase' : 'mock');
     const [dbError, setDbError] = useState<string | null>(null);
+    const [userCount, setUserCount] = useState<number | null>(null);
 
     useEffect(() => {
         const initApp = async () => {
@@ -79,11 +80,14 @@ export const useAppState = () => {
                     return;
                 }
 
-                const savedUsers = await storage.fetchUsers().catch(err => {
+                const response = await storage.fetchUsersRaw().catch(err => {
                     console.error('Fetch users error:', err);
                     setDbError(err.message || '데이터베이스 연결 오류');
-                    return [];
+                    return { data: [], count: 0 };
                 });
+
+                const savedUsers = response.data || [];
+                setUserCount(response.count);
 
                 if (savedUsers.length > 0) {
                     setDataSource('supabase');
@@ -349,6 +353,7 @@ export const useAppState = () => {
         handleUpdateOrgInfo,
         handleApplyState,
         dataSource,
-        dbError
+        dbError,
+        userCount
     };
 };

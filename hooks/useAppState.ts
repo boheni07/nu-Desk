@@ -66,6 +66,7 @@ export const useAppState = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [dataSource, setDataSource] = useState<'supabase' | 'mock'>(isConfigured ? 'supabase' : 'mock');
+    const [dbError, setDbError] = useState<string | null>(null);
 
     useEffect(() => {
         const initApp = async () => {
@@ -78,10 +79,15 @@ export const useAppState = () => {
                     return;
                 }
 
-                const savedUsers = await storage.fetchUsers().catch(() => []);
+                const savedUsers = await storage.fetchUsers().catch(err => {
+                    console.error('Fetch users error:', err);
+                    setDbError(err.message || '데이터베이스 연결 오류');
+                    return [];
+                });
 
                 if (savedUsers.length > 0) {
                     setDataSource('supabase');
+                    setDbError(null);
                     const [
                         savedCompanies,
                         savedProjects,
@@ -121,7 +127,7 @@ export const useAppState = () => {
                             setIsLoggedIn(true);
                         }
                     }
-                } else {
+                } else if (!dbError) {
                     // 데이터가 없는 경우 수동으로 등록해야 함 (자동 샘플 생성 중단)
                     console.info('No data found in Supabase. App initialized with empty state.');
                 }
@@ -342,6 +348,7 @@ export const useAppState = () => {
         handleUpdateOpsInfo,
         handleUpdateOrgInfo,
         handleApplyState,
-        dataSource
+        dataSource,
+        dbError
     };
 };

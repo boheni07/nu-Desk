@@ -7,9 +7,10 @@ interface LoginProps {
     onLogin: (user: User) => void;
     dataSource?: 'supabase' | 'mock';
     isConfigured?: boolean;
+    dbError?: string | null;
 }
 
-const Login: React.FC<LoginProps> = ({ users, onLogin, dataSource, isConfigured }) => {
+const Login: React.FC<LoginProps> = ({ users, onLogin, dataSource, isConfigured, dbError }) => {
     const [loginId, setLoginId] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -100,7 +101,20 @@ const Login: React.FC<LoginProps> = ({ users, onLogin, dataSource, isConfigured 
                             </div>
                         )}
 
-                        {users.length === 0 && !isSubmitting && (
+                        {dbError && (
+                            <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl space-y-2">
+                                <div className="flex items-center gap-2 text-rose-700">
+                                    <AlertCircle size={16} />
+                                    <span className="text-[11px] font-black uppercase tracking-tight">Database Error</span>
+                                </div>
+                                <p className="text-[10px] text-rose-600 font-bold leading-normal">
+                                    데이터베이스 조회 중 오류가 발생했습니다:<br />
+                                    <span className="font-mono text-[9px] break-all">{dbError}</span>
+                                </p>
+                            </div>
+                        )}
+
+                        {users.length === 0 && !isSubmitting && !dbError && (
                             <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl space-y-2">
                                 <div className="flex items-center gap-2 text-amber-700">
                                     <AlertCircle size={16} />

@@ -86,7 +86,10 @@ export const useAppState = () => {
                         storage.fetchTickets().catch(() => []),
                         storage.fetchComments().catch(() => []),
                         storage.fetchHistory().catch(() => []),
-                        storage.fetchAllOpsInfo().catch(() => []),
+                        storage.fetchAllOpsInfo().catch(err => {
+                            console.error('Fetch ops info error:', err);
+                            return [];
+                        }),
                         storage.fetchOrganizationInfo().catch(() => undefined)
                     ]);
 

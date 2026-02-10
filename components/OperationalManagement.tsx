@@ -27,8 +27,18 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<{ type: 'hardware' | 'software' | 'access', data: any } | null>(null);
 
+  // 프로젝트 데이터가 로드되거나 변경될 때 selectedProjectId 동기화
+  React.useEffect(() => {
+    if (!selectedProjectId && projects.length > 0) {
+      setSelectedProjectId(projects[0].id);
+    }
+  }, [projects, selectedProjectId]);
+
   const currentOpsInfo = useMemo(() => {
-    return opsInfo.find(o => o.projectId === selectedProjectId) || {
+    const found = opsInfo.find(o => o.projectId === selectedProjectId);
+    if (found) return found;
+
+    return {
       projectId: selectedProjectId,
       hardware: [],
       software: [],

@@ -71,6 +71,18 @@ const App: React.FC = () => {
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // Vercel/배포 환경 연결 진단
+  useEffect(() => {
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      console.error('Supabase configuration is missing!');
+      // 초기 로딩 후 약간의 지연을 두어 토스트가 잘 보이게 함
+      setTimeout(() => {
+        // useAppState 내부의 showToast를 직접 쓰기 어려우므로 window 이벤트를 쓰거나 
+        // 그냥 console.log/warning 시각화(Sidebar)에 의존
+      }, 1000);
+    }
+  }, []);
+
   const changeView = React.useCallback((newView: typeof view) => {
     setView(newView);
     setIsSidebarOpen(false);

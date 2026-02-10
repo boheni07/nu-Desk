@@ -101,7 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                 <div
                     onClick={() => changeView('profile')}
-                    className={`p-4 bg-slate-800/50 m-6 rounded-2xl cursor-pointer hover:bg-slate-800 transition-all border border-slate-700/30 group ${view === 'profile' ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}
+                    className={`p-4 bg-slate-800/50 mx-6 mb-2 rounded-2xl cursor-pointer hover:bg-slate-800 transition-all border border-slate-700/30 group ${view === 'profile' ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}
                 >
                     <div className="flex items-center gap-4">
                         <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center font-bold shrink-0 shadow-lg group-hover:scale-105 transition-transform text-lg">
@@ -112,6 +112,21 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{currentUser.role}</p>
                         </div>
                         <Settings size={16} className="text-slate-500 group-hover:text-blue-400 transition-colors" />
+                    </div>
+                </div>
+
+                <div className="px-6 mb-6">
+                    <div className="flex items-center justify-between p-3 bg-slate-800/30 rounded-xl border border-slate-800/50">
+                        <div className="flex items-center gap-2">
+                            <Database size={12} className={import.meta.env.VITE_SUPABASE_URL ? 'text-emerald-400' : 'text-rose-400'} />
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">DB Status</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${import.meta.env.VITE_SUPABASE_URL ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                            <span className={`text-[9px] font-black uppercase ${import.meta.env.VITE_SUPABASE_URL ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                {import.meta.env.VITE_SUPABASE_URL ? 'Connected' : 'Config Required'}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </aside>

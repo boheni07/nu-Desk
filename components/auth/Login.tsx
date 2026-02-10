@@ -21,15 +21,33 @@ const Login: React.FC<LoginProps> = ({ users, onLogin, dataSource, isConfigured,
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+
+        const trimmedId = loginId.trim();
+        const trimmedPw = password.trim();
+
+        if (!trimmedId || !trimmedPw) {
+            setError('아이디와 비밀번호를 입력해 주세요.');
+            return;
+        }
+
         setIsSubmitting(true);
 
         // Simulate a brief delay for realism
         setTimeout(() => {
-            const user = users.find(u => u.loginId === loginId && u.password === password);
+            // 아이디 대소문자 구분 없이 비교, 공백 제거 반영
+            const user = users.find(u =>
+                u.loginId?.toLowerCase() === trimmedId.toLowerCase() &&
+                u.password === trimmedPw
+            );
 
             if (!user) {
                 setError('아이디 또는 비밀번호가 일치하지 않습니다.');
                 setIsSubmitting(false);
+                console.warn('[Login Debug] Login Attempt Failed:', {
+                    input: trimmedId,
+                    availableUsers: users.length,
+                    userIDs: users.map(u => u.loginId)
+                });
                 return;
             }
 

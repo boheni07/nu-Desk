@@ -130,6 +130,8 @@ export const useAppState = () => {
                     setOpsInfo(savedOpsInfo);
                     setOrgInfo(savedOrgInfo || defaultOrgInfo);
 
+                    console.log(`[App Init] Supabase Data Loaded. Users: ${mappedUsers.length}, Projects: ${savedProjects.length}`);
+
                     const savedSession = localStorage.getItem('nu_session');
                     if (savedSession) {
                         const session = JSON.parse(savedSession);
@@ -142,6 +144,7 @@ export const useAppState = () => {
                 } else if (!dbError) {
                     // 데이터가 없는 경우 수동으로 등록해야 함 (자동 샘플 생성 중단)
                     console.info('No data found in Supabase. App initialized with empty state.');
+                    setUsers([]);
                 }
             } catch (err) {
                 console.error('App initialization error:', err);

@@ -1,0 +1,10 @@
+body {
+    font-family: 'Inter', 'Noto Sans KR', sans-serif;
+    background-color: #f8fafc;
+    color: #0f172a;
+    margin: 0;
+}
+
+#root {
+    min-height: 100vh;
+}

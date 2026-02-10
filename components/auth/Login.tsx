@@ -1,14 +1,15 @@
-
 import React, { useState } from 'react';
 import { User, UserStatus } from '../../types';
-import { LogIn, ShieldCheck, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { LogIn, ShieldCheck, AlertCircle, Eye, EyeOff, Database } from 'lucide-react';
 
 interface LoginProps {
     users: User[];
     onLogin: (user: User) => void;
+    dataSource?: 'supabase' | 'mock';
+    isConfigured?: boolean;
 }
 
-const Login: React.FC<LoginProps> = ({ users, onLogin }) => {
+const Login: React.FC<LoginProps> = ({ users, onLogin, dataSource, isConfigured }) => {
     const [loginId, setLoginId] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -99,10 +100,23 @@ const Login: React.FC<LoginProps> = ({ users, onLogin }) => {
                             </div>
                         )}
 
+                        {users.length === 0 && !isSubmitting && (
+                            <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl space-y-2">
+                                <div className="flex items-center gap-2 text-amber-700">
+                                    <AlertCircle size={16} />
+                                    <span className="text-[11px] font-black uppercase tracking-tight">System Notice</span>
+                                </div>
+                                <p className="text-[10px] text-amber-600 font-bold leading-normal">
+                                    현재 데이터베이스에 등록된 사용자가 없습니다.<br />
+                                    초기 계정 생성이 필요합니다.
+                                </p>
+                            </div>
+                        )}
+
                         <button
                             type="submit"
-                            disabled={isSubmitting}
-                            className={`w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all active:scale-95 group relative overflow-hidden ${isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+                            disabled={isSubmitting || (users.length === 0 && isConfigured)}
+                            className={`w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all active:scale-95 group relative overflow-hidden ${isSubmitting || (users.length === 0 && isConfigured) ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'}`}
                         >
                             <div className="flex items-center justify-center gap-3">
                                 {isSubmitting ? (
@@ -115,6 +129,21 @@ const Login: React.FC<LoginProps> = ({ users, onLogin }) => {
                                 )}
                             </div>
                         </button>
+
+                        <div className="pt-4 flex items-center justify-center gap-4 border-t border-slate-100">
+                            <div className="flex items-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                                <span className={`text-[9px] font-black uppercase ${isConfigured ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                    {isConfigured ? 'Live DB' : 'Disconnected'}
+                                </span>
+                            </div>
+                            <div className="w-px h-2 bg-slate-200" />
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                    Users: {users.length}
+                                </span>
+                            </div>
+                        </div>
                     </form>
 
                     <div className="mt-12 text-center">

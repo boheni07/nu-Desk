@@ -18,6 +18,7 @@ import {
   LogOut,
   Archive,
 } from 'lucide-react';
+import { isConfigured } from './supabaseClient';
 import NavItem from './components/layout/NavItem';
 import LoadingOverlay from './components/common/LoadingOverlay';
 import { addDays } from 'date-fns';
@@ -279,7 +280,14 @@ const App: React.FC = () => {
   return (
     <>
       {isLoading ? <LoadingOverlay /> : (
-        !isLoggedIn ? <Login users={users} onLogin={handleLogin} /> : appUI
+        !isLoggedIn ? (
+          <Login
+            users={users}
+            onLogin={handleLogin}
+            dataSource={dataSource}
+            isConfigured={isConfigured}
+          />
+        ) : appUI
       )}
     </>
   );

@@ -25,6 +25,7 @@ interface SidebarProps {
     view: string;
     changeView: (view: any) => void;
     handleLogout: () => void;
+    dataSource?: 'supabase' | 'mock';
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -35,7 +36,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     setCurrentUser,
     view,
     changeView,
-    handleLogout
+    handleLogout,
+    dataSource = 'mock'
 }) => {
     return (
         <>
@@ -116,17 +118,24 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 <div className="px-6 mb-6">
-                    <div className="flex items-center justify-between p-3 bg-slate-800/30 rounded-xl border border-slate-800/50">
-                        <div className="flex items-center gap-2">
-                            <Database size={12} className={import.meta.env.VITE_SUPABASE_URL ? 'text-emerald-400' : 'text-rose-400'} />
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">DB Status</span>
+                    <div className={`flex flex-col gap-2 p-3 bg-slate-800/30 rounded-xl border ${dataSource === 'supabase' ? 'border-emerald-500/20' : 'border-rose-500/20'}`}>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Database size={12} className={dataSource === 'supabase' ? 'text-emerald-400' : 'text-rose-400'} />
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Database</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full ${dataSource === 'supabase' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
+                                <span className={`text-[9px] font-black uppercase ${dataSource === 'supabase' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                    {dataSource === 'supabase' ? 'Supabase Live' : 'Disconnected'}
+                                </span>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${import.meta.env.VITE_SUPABASE_URL ? 'bg-emerald-400' : 'bg-rose-400'}`} />
-                            <span className={`text-[9px] font-black uppercase ${import.meta.env.VITE_SUPABASE_URL ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                {import.meta.env.VITE_SUPABASE_URL ? 'Connected' : 'Config Required'}
-                            </span>
-                        </div>
+                        {dataSource === 'mock' && (
+                            <p className="text-[8px] text-rose-400 font-bold leading-tight border-t border-rose-500/10 pt-1.5">
+                                [WARNING] DB 연결 설정이 없습니다.<br />현재 모든 처리가 로컬 모드에서 작동합니다.
+                            </p>
+                        )}
                     </div>
                 </div>
             </aside>

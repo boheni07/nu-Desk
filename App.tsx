@@ -63,7 +63,8 @@ const App: React.FC = () => {
     handleDeleteProject,
     handleUpdateOpsInfo,
     handleUpdateOrgInfo,
-    handleApplyState
+    handleApplyState,
+    dataSource
   } = useAppState();
 
   const [view, setView] = useState<'list' | 'completed_list' | 'create' | 'edit' | 'detail' | 'companies' | 'users' | 'projects' | 'profile' | 'dataManagement' | 'opsManagement' | 'orgSettings'>('list');
@@ -173,6 +174,7 @@ const App: React.FC = () => {
         view={view}
         changeView={changeView}
         handleLogout={handleLogout}
+        dataSource={dataSource}
       />
 
       <div className="flex-1 flex flex-col lg:ml-72 min-w-0">

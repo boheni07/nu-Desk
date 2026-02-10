@@ -50,13 +50,14 @@ export const getInitialTickets = (now: Date): Ticket[] => [
 
 import { useToast } from '../contexts/ToastContext';
 
+import { isConfigured } from '../supabaseClient';
+
 export const useAppState = () => {
     const { showToast } = useToast();
     const [currentUser, setCurrentUser] = useState<User | null>(null);
-    // ... rest of states ...
-    const [companies, setCompanies] = useState<Company[]>(initialCompanies);
-    const [users, setUsers] = useState<User[]>(initialUsers);
-    const [projects, setProjects] = useState<Project[]>(initialProjects);
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
+    const [projects, setProjects] = useState<Project[]>([]);
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [comments, setComments] = useState<Comment[]>([]);
     const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -64,14 +65,23 @@ export const useAppState = () => {
     const [orgInfo, setOrgInfo] = useState<OrganizationInfo>(defaultOrgInfo);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [dataSource, setDataSource] = useState<'supabase' | 'mock'>(isConfigured ? 'supabase' : 'mock');
 
     useEffect(() => {
         const initApp = async () => {
             setIsLoading(true);
             try {
+                if (!isConfigured) {
+                    console.info('Supabase not configured, using mock data.');
+                    setDataSource('mock');
+                    setIsLoading(false);
+                    return;
+                }
+
                 const savedUsers = await storage.fetchUsers().catch(() => []);
 
                 if (savedUsers.length > 0) {
+                    setDataSource('supabase');
                     const [
                         savedCompanies,
                         savedProjects,
@@ -112,29 +122,8 @@ export const useAppState = () => {
                         }
                     }
                 } else {
-                    // Seeding if no data
-                    const now = new Date();
-                    const sampleTickets = getInitialTickets(now);
-                    const sampleHistory: HistoryEntry[] = sampleTickets.map(t => ({
-                        id: `h-${t.id}-init`,
-                        ticketId: t.id,
-                        status: TicketStatus.WAITING,
-                        changedBy: t.customerName,
-                        timestamp: t.createdAt,
-                        note: '티켓이 신규 등록되었습니다.'
-                    }));
-
-                    setCompanies(initialCompanies);
-                    setUsers(initialUsers);
-                    setProjects(initialProjects);
-                    setTickets(sampleTickets);
-                    setHistory(sampleHistory);
-
-                    await storage.saveCompanies(initialCompanies);
-                    await storage.saveUsers(initialUsers);
-                    await storage.saveProjects(initialProjects);
-                    await storage.saveTickets(sampleTickets);
-                    await storage.saveHistoryEntries(sampleHistory);
+                    // 데이터가 없는 경우 수동으로 등록해야 함 (자동 샘플 생성 중단)
+                    console.info('No data found in Supabase. App initialized with empty state.');
                 }
             } catch (err) {
                 console.error('App initialization error:', err);
@@ -352,6 +341,7 @@ export const useAppState = () => {
         handleDeleteProject,
         handleUpdateOpsInfo,
         handleUpdateOrgInfo,
-        handleApplyState
+        handleApplyState,
+        dataSource
     };
 };

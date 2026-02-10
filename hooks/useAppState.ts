@@ -86,10 +86,18 @@ export const useAppState = () => {
                     return { data: [], count: 0 };
                 });
 
-                const savedUsers = response.data || [];
+                const rawUsers = response.data || [];
                 setUserCount(response.count);
 
-                if (savedUsers.length > 0) {
+                // DB의 snake_case 데이터를 앱의 camelCase User 객체로 매핑
+                const mappedUsers: User[] = rawUsers.map(u => ({
+                    ...u,
+                    loginId: u.login_id,
+                    companyId: u.company_id,
+                    department: u.department
+                }));
+
+                if (mappedUsers.length > 0) {
                     setDataSource('supabase');
                     setDbError(null);
                     const [
@@ -114,7 +122,7 @@ export const useAppState = () => {
                     ]);
 
                     setCompanies(savedCompanies);
-                    setUsers(savedUsers);
+                    setUsers(mappedUsers);
                     setProjects(savedProjects);
                     setTickets(savedTickets);
                     setComments(savedComments);
@@ -125,7 +133,7 @@ export const useAppState = () => {
                     const savedSession = localStorage.getItem('nu_session');
                     if (savedSession) {
                         const session = JSON.parse(savedSession);
-                        const user = savedUsers.find(u => u.id === session.userId);
+                        const user = mappedUsers.find(u => u.id === session.userId);
                         if (user) {
                             setCurrentUser(user);
                             setIsLoggedIn(true);

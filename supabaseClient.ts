@@ -2,15 +2,14 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase 접속 정보 (환경 변수 사용)
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Supabase URL or Anon Key is missing. Check your .env.local file.');
+    console.warn('Supabase URL or Anon Key is missing. Database features will not work.');
 }
 
-/**
- * Supabase 클라이언트 인스턴스
- * 모든 데이터베이스 상호작용에 사용됩니다.
- */
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+// createClient에 빈 문자열이 들어가면 에러가 발생할 수 있으므로 최소한의 유효성 검사 후 호출
+export const supabase = (supabaseUrl && supabaseAnonKey)
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : { from: () => ({ select: () => ({}), insert: () => ({}), upsert: () => ({}), delete: () => ({}), eq: () => ({}) }) } as any;

@@ -4,6 +4,7 @@ import { Project, User, Ticket, UserRole, IntakeMethod } from '../types';
 import { addBusinessDays } from '../utils';
 import { Paperclip, Calendar, X, Check, Phone, HelpCircle, FileText, Loader2 } from 'lucide-react';
 import { format, isBefore, startOfDay } from 'date-fns';
+import { useToast } from '../contexts/ToastContext';
 
 interface Props {
   projects: Project[];
@@ -16,6 +17,7 @@ interface Props {
 const ALLOWED_EXTENSIONS = ".pdf,.doc,.docx,.xlsx,.xls,.pptx,.ppt,.png,.jpg,.jpeg,.gif,.webp,.hwp,.txt";
 
 const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onSubmit, onCancel }) => {
+  const { showToast } = useToast();
   const isAdmin = currentUser.role === UserRole.ADMIN;
   const isSupport = currentUser.role === UserRole.SUPPORT_LEAD || currentUser.role === UserRole.SUPPORT_STAFF;
 
@@ -77,7 +79,7 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !description || !projectId || (isShortened && !dueReason)) {
-      alert('모든 필수 항목을 입력해주세요.');
+      showToast('모든 필수 항목을 입력해주세요.', 'warning');
       return;
     }
     setShowConfirm(true);
@@ -111,7 +113,7 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
     } catch (err: any) {
       console.error('Ticket registration error:', err);
       const errorMessage = err?.message || '알 수 없는 오류가 발생했습니다.';
-      alert(`티켓 등록 중 오류가 발생했습니다: ${errorMessage}`);
+      showToast(`티켓 등록 중 오류가 발생했습니다: ${errorMessage}`, 'error');
     } finally {
       setIsSubmitting(false);
     }

@@ -25,6 +25,7 @@ import StatusBadge from './common/StatusBadge';
 import ActivityHistory from './ticket/ActivityHistory';
 import CommentSection from './ticket/CommentSection';
 import DecisionLog from './ticket/DecisionLog';
+import { useToast } from '../contexts/ToastContext';
 
 interface Props {
   ticket: Ticket;
@@ -51,6 +52,7 @@ const TicketDetail: React.FC<Props> = ({
   onAddComment,
   onBack
 }) => {
+  const { showToast } = useToast();
   const [planText, setPlanText] = useState('');
   const [expectedCompletionDate, setExpectedCompletionDate] = useState(format(new Date(ticket.dueDate), 'yyyy-MM-dd'));
   const [delayReason, setDelayReason] = useState('');
@@ -121,7 +123,7 @@ const TicketDetail: React.FC<Props> = ({
   }, [project.customerContactIds, users]);
 
   const handleRegisterPlan = () => {
-    if (!planText) { alert('처리 계획을 입력해주세요.'); return; }
+    if (!planText) { showToast('처리 계획을 입력해주세요.', 'warning'); return; }
     const fileListStr = planFiles.length > 0 ? ` (첨부파일: ${planFiles.map(f => f.name).join(', ')})` : '';
     const note = `처리 계획 등록: ${planText} (완료 예정: ${format(new Date(expectedCompletionDate), 'yyyy-MM-dd')})${fileListStr}`;
     onStatusUpdate(ticket.id, TicketStatus.IN_PROGRESS, {
@@ -136,7 +138,7 @@ const TicketDetail: React.FC<Props> = ({
   };
 
   const handlePostponeRequest = () => {
-    if (!postponeDate || !postponeReason) { alert('연기 희망일과 사유를 모두 입력해주세요.'); return; }
+    if (!postponeDate || !postponeReason) { showToast('연기 희망일과 사유를 모두 입력해주세요.', 'warning'); return; }
     const originalDateStr = format(new Date(ticket.dueDate), 'yyyy-MM-dd');
     const note = `[기한 연기 요청]\n당초 기한: ${originalDateStr}\n요청 기한: ${postponeDate}\n요청 사유: ${postponeReason}`;
     onStatusUpdate(ticket.id, TicketStatus.POSTPONE_REQUESTED, {

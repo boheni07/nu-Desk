@@ -14,6 +14,8 @@ interface HandlersProps {
     changeView: (view: any) => void;
 }
 
+import { useToast } from '../contexts/ToastContext';
+
 export const useTicketHandlers = ({
     currentUser,
     users,
@@ -24,6 +26,7 @@ export const useTicketHandlers = ({
     setComments,
     changeView
 }: HandlersProps) => {
+    const { showToast } = useToast();
 
     const handleCreateTicket = useCallback(async (newTicket: Omit<Ticket, 'id' | 'createdAt' | 'status'>) => {
         try {
@@ -56,12 +59,13 @@ export const useTicketHandlers = ({
             // 성공 시 UI 업데이트
             setTickets(prev => [ticket, ...prev]);
             setHistory(prev => [historyEntry, ...prev]);
+            showToast('티켓이 성공적으로 등록되었습니다.', 'success');
             changeView('list');
         } catch (err) {
             console.error('Ticket creation error:', err);
-            alert('티켓 등록 중 오류가 발생했습니다. DB 연결을 확인해주세요.');
+            showToast('티켓 등록 중 오류가 발생했습니다. DB 연결을 확인해주세요.', 'error');
         }
-    }, [projects, users, currentUser, setTickets, setHistory, changeView]);
+    }, [projects, users, currentUser, setTickets, setHistory, changeView, showToast]);
 
     const handleUpdateTicket = useCallback(async (id: string, updatedData: Partial<Ticket>) => {
         try {
@@ -85,12 +89,13 @@ export const useTicketHandlers = ({
             // 성공 시 UI 업데이트
             setTickets(prev => prev.map(t => t.id === id ? updatedTicket : t));
             setHistory(prev => [historyEntry, ...prev]);
+            showToast('티켓 정보가 성공적으로 수정되었습니다.', 'success');
             changeView('list');
         } catch (err) {
             console.error('Ticket update error:', err);
-            alert('티켓 수정 중 오류가 발생했습니다.');
+            showToast('티켓 수정 중 오류가 발생했습니다.', 'error');
         }
-    }, [tickets, currentUser, setTickets, setHistory, changeView]);
+    }, [tickets, currentUser, setTickets, setHistory, changeView, showToast]);
 
     const handleDeleteTicket = useCallback(async (id: string) => {
         if (window.confirm('정말 이 티켓을 삭제하시겠습니까?')) {
@@ -102,12 +107,13 @@ export const useTicketHandlers = ({
                 setTickets(prev => prev.filter(t => t.id !== id));
                 setHistory(prev => prev.filter(h => h.ticketId !== id));
                 if (setComments) setComments(prev => prev.filter(c => c.ticketId !== id));
+                showToast('티켓이 삭제되었습니다.', 'success');
             } catch (err) {
                 console.error('Ticket delete error:', err);
-                alert('티켓 삭제 중 오류가 발생했습니다.');
+                showToast('티켓 삭제 중 오류가 발생했습니다.', 'error');
             }
         }
-    }, [setTickets, setHistory, setComments]);
+    }, [setTickets, setHistory, setComments, showToast]);
 
     const updateTicketStatus = useCallback(async (ticketId: string, newStatus: TicketStatus, updates: Partial<Ticket> = {}, note?: string, action?: string) => {
         try {
@@ -132,11 +138,12 @@ export const useTicketHandlers = ({
             // 성공 시 UI 업데이트
             setTickets(prev => prev.map(t => t.id === ticketId ? updatedTicket : t));
             setHistory(prev => [historyEntry, ...prev]);
+            showToast(`티켓 상태가 ${newStatus}(으)로 변경되었습니다.`, 'success');
         } catch (err) {
             console.error('Status update error:', err);
-            alert('상태 변경 적용 중 오류가 발생했습니다.');
+            showToast('상태 변경 적용 중 오류가 발생했습니다.', 'error');
         }
-    }, [tickets, currentUser, setTickets, setHistory]);
+    }, [tickets, currentUser, setTickets, setHistory, showToast]);
 
     const addComment = useCallback(async (commentData: Omit<Comment, 'id' | 'timestamp'>) => {
         try {
@@ -147,11 +154,12 @@ export const useTicketHandlers = ({
 
             // 성공 시 UI 업데이트
             setComments(prev => [comment, ...prev]);
+            showToast('댓글이 등록되었습니다.', 'success');
         } catch (err) {
             console.error('Comment error:', err);
-            alert('댓글 등록 중 오류가 발생했습니다.');
+            showToast('댓글 등록 중 오류가 발생했습니다.', 'error');
         }
-    }, [setComments]);
+    }, [setComments, showToast]);
 
     return {
         handleCreateTicket,

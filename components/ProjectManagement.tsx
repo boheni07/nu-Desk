@@ -7,6 +7,7 @@ import {
   Power, Check
 } from 'lucide-react';
 import DeleteConfirmModal from './common/DeleteConfirmModal';
+import { useToast } from '../contexts/ToastContext';
 
 interface Props {
   projects: Project[];
@@ -20,6 +21,7 @@ interface Props {
 }
 
 const ProjectManagement: React.FC<Props> = ({ projects, companies, users, tickets, currentUser, onAdd, onUpdate, onDelete }) => {
+  const { showToast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -87,11 +89,11 @@ const ProjectManagement: React.FC<Props> = ({ projects, companies, users, ticket
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.clientId) {
-      alert('프로젝트명과 고객사는 필수 항목입니다.');
+      showToast('프로젝트명과 고객사는 필수 항목입니다.', 'warning');
       return;
     }
     if (formData.supportStaffIds.length === 0) {
-      alert('최소 1명의 지원담당자가 필요합니다. (첫 번째 선택자가 PM) ');
+      showToast('최소 1명의 지원담당자가 필요합니다. (첫 번째 선택자가 PM) ', 'warning');
       return;
     }
 
@@ -102,7 +104,7 @@ const ProjectManagement: React.FC<Props> = ({ projects, companies, users, ticket
     });
 
     if (hasAdminInSupport) {
-      alert('관리자(ADMIN) 권한을 가진 사용자는 지원 인력으로 지정할 수 없습니다.');
+      showToast('관리자(ADMIN) 권한을 가진 사용자는 지원 인력으로 지정할 수 없습니다.', 'error');
       return;
     }
 

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Company, CompanyStatus, User, Project, Ticket } from '../types';
 import { Building2, Plus, Edit2, Trash2, X, Search, MapPin, Briefcase, UserCircle, Power, Check } from 'lucide-react';
 import DeleteConfirmModal from './common/DeleteConfirmModal';
+import { useToast } from '../contexts/ToastContext';
 
 interface Props {
   companies: Company[];
@@ -15,6 +16,7 @@ interface Props {
 }
 
 const CompanyManagement: React.FC<Props> = ({ companies, users, projects, tickets, onAdd, onUpdate, onDelete }) => {
+  const { showToast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
@@ -68,7 +70,7 @@ const CompanyManagement: React.FC<Props> = ({ companies, users, projects, ticket
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      alert('기관명은 필수 입력 사항입니다.');
+      showToast('기관명은 필수 입력 사항입니다.', 'warning');
       return;
     }
 

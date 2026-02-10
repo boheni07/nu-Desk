@@ -6,6 +6,7 @@ import {
   Eye, EyeOff, Building, MessageSquare, Check, Shield
 } from 'lucide-react';
 import { formatPhoneNumber, isValidEmail } from '../lib/formatters';
+import { useToast } from '../contexts/ToastContext';
 
 interface Props {
   user: User;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 const ProfileEdit: React.FC<Props> = ({ user, companyName, onUpdate, onCancel }) => {
+  const { showToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<Partial<User>>({
     name: user.name,
@@ -28,11 +30,11 @@ const ProfileEdit: React.FC<Props> = ({ user, companyName, onUpdate, onCancel })
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.password) {
-      alert('성명과 비밀번호는 필수 항목입니다.');
+      showToast('성명과 비밀번호는 필수 항목입니다.', 'warning');
       return;
     }
     if (formData.email && !isValidEmail(formData.email)) {
-      alert('유효하지 않은 이메일 형식입니다.');
+      showToast('유효하지 않은 이메일 형식입니다.', 'warning');
       return;
     }
     onUpdate(formData);

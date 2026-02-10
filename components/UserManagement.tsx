@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { formatPhoneNumber, isValidEmail } from '../lib/formatters';
 import DeleteConfirmModal from './common/DeleteConfirmModal';
+import { useToast } from '../contexts/ToastContext';
 
 interface Props {
   users: User[];
@@ -22,6 +23,7 @@ interface Props {
 }
 
 const UserManagement: React.FC<Props> = ({ users, companies, projects, tickets, currentUser, orgInfo, onAdd, onUpdate, onDelete }) => {
+  const { showToast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -109,16 +111,16 @@ const UserManagement: React.FC<Props> = ({ users, companies, projects, tickets, 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.loginId || !formData.password || !formData.name) {
-      alert('ID, 비밀번호, 성명은 필수 항목입니다.');
+      showToast('ID, 비밀번호, 성명은 필수 항목입니다.', 'warning');
       return;
     }
     if (formData.role === UserRole.CUSTOMER && !formData.companyId) {
-      alert('고객담당인 경우 고객사 선택은 필수입니다.');
+      showToast('고객담당인 경우 고객사 선택은 필수입니다.', 'warning');
       return;
     }
 
     if (formData.email && !isValidEmail(formData.email)) {
-      alert('유효하지 않은 이메일 형식입니다.');
+      showToast('유효하지 않은 이메일 형식입니다.', 'warning');
       return;
     }
 
@@ -220,7 +222,7 @@ const UserManagement: React.FC<Props> = ({ users, companies, projects, tickets, 
                       <button
                         onClick={() => {
                           if (user.loginId === 'admin1') {
-                            alert('시스템 관리자 계정(admin1)은 삭제할 수 없습니다.');
+                            showToast('시스템 관리자 계정(admin1)은 삭제할 수 없습니다.', 'error');
                             return;
                           }
                           handleOpenDeleteModal(user);

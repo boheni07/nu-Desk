@@ -48,8 +48,12 @@ export const getInitialTickets = (now: Date): Ticket[] => [
     { id: 'T-1002', title: '신규 사용자 권한 일괄 등록 요청', description: '인사 이동으로 인한 50명의 사용자 권한을 엑셀 기반으로 등록 요청합니다.', status: TicketStatus.RECEIVED, customerId: 'u5', customerName: '최협력 대리', supportId: 'u3', supportName: '박기술 엔지니어', projectId: 'p2', createdAt: addDays(now, -2).toISOString(), dueDate: addBusinessDays(now, 3).toISOString(), initialDueDate: addBusinessDays(now, 3).toISOString() },
 ];
 
+import { useToast } from '../contexts/ToastContext';
+
 export const useAppState = () => {
+    const { showToast } = useToast();
     const [currentUser, setCurrentUser] = useState<User | null>(null);
+    // ... rest of states ...
     const [companies, setCompanies] = useState<Company[]>(initialCompanies);
     const [users, setUsers] = useState<User[]>(initialUsers);
     const [projects, setProjects] = useState<Project[]>(initialProjects);
@@ -131,13 +135,14 @@ export const useAppState = () => {
                 }
             } catch (err) {
                 console.error('App initialization error:', err);
+                showToast('초기 데이터를 불러오는 중 오류가 발생했습니다.', 'error');
             } finally {
                 setIsLoading(false);
             }
         };
 
         initApp();
-    }, []);
+    }, [showToast]);
 
     // --- Handlers with DB-First Consistency ---
     const handleUpdateUser = async (id: string, userData: Partial<User>) => {
@@ -149,9 +154,10 @@ export const useAppState = () => {
             await storage.saveUser(updatedUser);
             setUsers(prev => prev.map(u => u.id === id ? updatedUser : u));
             if (currentUser && id === currentUser.id) setCurrentUser(updatedUser);
+            showToast('사용자 정보가 성공적으로 업데이트되었습니다.', 'success');
         } catch (err) {
             console.error('User update error:', err);
-            alert('사용자 정보 저장 중 오류가 발생했습니다.');
+            showToast('사용자 정보 저장 중 오류가 발생했습니다.', 'error');
         }
     };
 
@@ -160,9 +166,10 @@ export const useAppState = () => {
             const user = { ...data, id: `u${Date.now()}` } as User;
             await storage.saveUser(user);
             setUsers(prev => [...prev, user]);
+            showToast('새 사용자가 등록되었습니다.', 'success');
         } catch (err) {
             console.error('User creation error:', err);
-            alert('사용자 등록 중 오류가 발생했습니다.');
+            showToast('사용자 등록 중 오류가 발생했습니다.', 'error');
         }
     };
 
@@ -170,9 +177,10 @@ export const useAppState = () => {
         try {
             await storage.deleteUser(id);
             setUsers(prev => prev.filter(u => u.id !== id));
+            showToast('사용자가 삭제되었습니다.', 'success');
         } catch (err) {
             console.error('User delete error:', err);
-            alert('사용자 삭제 중 오류가 발생했습니다.');
+            showToast('사용자 삭제 중 오류가 발생했습니다.', 'error');
         }
     };
 
@@ -181,9 +189,10 @@ export const useAppState = () => {
             const company = { ...data, id: `c${Date.now()}` } as Company;
             await storage.saveCompany(company);
             setCompanies(prev => [...prev, company]);
+            showToast('새 고객사가 등록되었습니다.', 'success');
         } catch (err) {
             console.error('Company creation error:', err);
-            alert('고객사 등록 중 오류가 발생했습니다.');
+            showToast('고객사 등록 중 오류가 발생했습니다.', 'error');
         }
     };
 
@@ -194,9 +203,10 @@ export const useAppState = () => {
             const updated = { ...company, ...data };
             await storage.saveCompany(updated);
             setCompanies(prev => prev.map(c => c.id === id ? updated : c));
+            showToast('고객사 정보가 업데이트되었습니다.', 'success');
         } catch (err) {
             console.error('Company update error:', err);
-            alert('고객사 정보 수정 중 오류가 발생했습니다.');
+            showToast('고객사 정보 수정 중 오류가 발생했습니다.', 'error');
         }
     };
 
@@ -204,9 +214,10 @@ export const useAppState = () => {
         try {
             await storage.deleteCompany(id);
             setCompanies(prev => prev.filter(c => c.id !== id));
+            showToast('고객사가 삭제되었습니다.', 'success');
         } catch (err) {
             console.error('Company delete error:', err);
-            alert('고객사 삭제 중 오류가 발생했습니다.');
+            showToast('고객사 삭제 중 오류가 발생했습니다.', 'error');
         }
     };
 
@@ -215,9 +226,10 @@ export const useAppState = () => {
             const project = { ...data, id: `p${Date.now()}` } as Project;
             await storage.saveProject(project);
             setProjects(prev => [...prev, project]);
+            showToast('새 프로젝트가 등록되었습니다.', 'success');
         } catch (err) {
             console.error('Project creation error:', err);
-            alert('프로젝트 등록 중 오류가 발생했습니다.');
+            showToast('프로젝트 등록 중 오류가 발생했습니다.', 'error');
         }
     };
 
@@ -228,9 +240,10 @@ export const useAppState = () => {
             const updated = { ...project, ...data };
             await storage.saveProject(updated);
             setProjects(prev => prev.map(p => p.id === id ? updated : p));
+            showToast('프로젝트 정보가 업데이트되었습니다.', 'success');
         } catch (err) {
             console.error('Project update error:', err);
-            alert('프로젝트 정보 수정 중 오류가 발생했습니다.');
+            showToast('프로젝트 정보 수정 중 오류가 발생했습니다.', 'error');
         }
     };
 
@@ -238,9 +251,10 @@ export const useAppState = () => {
         try {
             await storage.deleteProject(id);
             setProjects(prev => prev.filter(p => p.id !== id));
+            showToast('프로젝트가 삭제되었습니다.', 'success');
         } catch (err) {
             console.error('Project delete error:', err);
-            alert('프로젝트 삭제 중 오류가 발생했습니다.');
+            showToast('프로젝트 삭제 중 오류가 발생했습니다.', 'error');
         }
     };
 
@@ -252,9 +266,10 @@ export const useAppState = () => {
                 if (exists) return prev.map(o => o.projectId === newOpsInfo.projectId ? newOpsInfo : o);
                 return [...prev, newOpsInfo];
             });
+            showToast('운영 정보가 저장되었습니다.', 'success');
         } catch (err) {
             console.error('Ops info update error:', err);
-            alert('운영 정보 저장 중 오류가 발생했습니다.');
+            showToast('운영 정보 저장 중 오류가 발생했습니다.', 'error');
         }
     };
 
@@ -262,9 +277,10 @@ export const useAppState = () => {
         try {
             await storage.saveOrganizationInfo(data);
             setOrgInfo(data);
+            showToast('기관 정보가 저장되었습니다.', 'success');
         } catch (err) {
             console.error('Org info update error:', err);
-            alert('기관 정보 저장 중 오류가 발생했습니다.');
+            showToast('기관 정보 저장 중 오류가 발생했습니다.', 'error');
         }
     };
 
@@ -288,7 +304,7 @@ export const useAppState = () => {
                 newState.orgInfo ? storage.saveOrganizationInfo(newState.orgInfo) : Promise.resolve(),
             ]);
 
-            // 2. DB 성공 시에만 로컬 UI 상태 업데이트
+            // DB 성공 시에만 로컬 UI 상태 업데이트
             setCompanies(newState.companies);
             setUsers(newState.users);
             setProjects(newState.projects);
@@ -301,9 +317,10 @@ export const useAppState = () => {
             const foundUser = newState.users.find(u => (currentUser && u.id === currentUser.id)) || newState.users[0];
             if (foundUser) setCurrentUser(foundUser);
 
+            showToast('데이터가 성공적으로 동기화되었습니다.', 'success');
         } catch (err) {
             console.error('State sync error:', err);
-            alert('데이터 동기화 중 오류가 발생했습니다. DB 연결을 확인해주세요.');
+            showToast('데이터 동기화 중 오류가 발생했습니다. DB 연결을 확인해주세요.', 'error');
         } finally {
             setIsLoading(false);
         }

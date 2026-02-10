@@ -33,6 +33,9 @@ import OperationalManagement from './components/OperationalManagement';
 import OrganizationSettings from './components/OrganizationSettings';
 import Login from './components/auth/Login';
 import * as storage from './lib/storage';
+import { useAppState } from './hooks/useAppState';
+import { useTicketHandlers } from './hooks/useTicketHandlers';
+import { useBackgroundTasks } from './hooks/useBackgroundTasks';
 
 // 1. Initial Sample Companies
 export const initialCompanies: Company[] = [
@@ -87,187 +90,51 @@ export const getInitialTickets = (now: Date): Ticket[] => [
 ];
 
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User>(initialUsers[1]);
-  const [companies, setCompanies] = useState<Company[]>(initialCompanies);
-  const [users, setUsers] = useState<User[]>(initialUsers);
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [opsInfo, setOpsInfo] = useState<OperationalInfo[]>([]);
-  const [orgInfo, setOrgInfo] = useState<OrganizationInfo | undefined>(undefined);
+  const {
+    currentUser, setCurrentUser,
+    companies, setCompanies,
+    users, setUsers,
+    projects, setProjects,
+    tickets, setTickets,
+    comments, setComments,
+    history, setHistory,
+    opsInfo, setOpsInfo,
+    orgInfo, setOrgInfo,
+    isLoading,
+    isLoggedIn, setIsLoggedIn,
+    handleUpdateUser,
+    handleUpdateOrgInfo,
+    handleApplyState
+  } = useAppState();
+
   const [view, setView] = useState<'list' | 'completed_list' | 'create' | 'edit' | 'detail' | 'companies' | 'users' | 'projects' | 'profile' | 'dataManagement' | 'opsManagement' | 'orgSettings'>('list');
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  // 1. 초기 데이터 로드 (Supabase 관계형)
-  useEffect(() => {
-    const initApp = async () => {
-      setIsLoading(true);
-      try {
-        // 개별 테이블 로드 (하나라도 실패하면 로그 남김)
-        const savedUsers = await storage.fetchUsers().catch(e => { console.error('Users load failed:', e); return []; });
-
-        if (savedUsers.length > 0) {
-          // 사용자가 있으면 다른 데이터도 로드
-          const [
-            savedCompanies,
-            savedProjects,
-            savedTickets,
-            savedComments,
-            savedHistory,
-            savedOpsInfo,
-            savedOrgInfo
-          ] = await Promise.all([
-            storage.fetchCompanies().catch(() => []),
-            storage.fetchProjects().catch(() => []),
-            storage.fetchTickets().catch(() => []),
-            storage.fetchComments().catch(() => []),
-            storage.fetchHistory().catch(() => []),
-            storage.fetchAllOpsInfo().catch(() => []),
-            storage.fetchOrganizationInfo().catch(() => undefined)
-          ]);
-
-          setCompanies(savedCompanies);
-          setUsers(savedUsers);
-          setProjects(savedProjects);
-          setTickets(savedTickets);
-          setComments(savedComments);
-          setHistory(savedHistory);
-          setOpsInfo(savedOpsInfo);
-          setOrgInfo(savedOrgInfo || defaultOrgInfo);
-
-          // 세션 체크 (localStorage)
-          const savedSession = localStorage.getItem('nu_session');
-          if (savedSession) {
-            const session = JSON.parse(savedSession);
-            const user = savedUsers.find(u => u.id === session.userId);
-            if (user) {
-              setCurrentUser(user);
-              setIsLoggedIn(true);
-            }
-          } else {
-            // 기본값 설정 (로그인이 안 된 상태면 setCurrentUser는 dummy 나 초기 로드용으로만)
-            const admin = savedUsers.find(u => u.role === UserRole.ADMIN) || savedUsers[0];
-            setCurrentUser(admin);
-          }
-        } else {
-          // 데이터가 없으면 샘플 데이터 시딩
-          console.log('초기 데이터가 없어 시딩을 시작합니다...');
-          const now = new Date();
-          const sampleTickets = getInitialTickets(now);
-          const sampleHistory: HistoryEntry[] = [];
-          sampleTickets.forEach(t => {
-            sampleHistory.push({ id: `h-${t.id}-init`, ticketId: t.id, status: TicketStatus.WAITING, changedBy: t.customerName, timestamp: t.createdAt, note: '티켓이 신규 등록되었습니다.' });
-          });
-
-          setTickets(sampleTickets);
-          setHistory(sampleHistory);
-
-          // Supabase 시딩
-          try {
-            await storage.saveCompanies(initialCompanies);
-            await storage.saveUsers(initialUsers);
-            await storage.saveProjects(initialProjects);
-            await storage.saveTickets(sampleTickets);
-            await storage.saveHistoryEntries(sampleHistory);
-            console.log('시딩 완료');
-          } catch (seedErr) {
-            console.error('시딩 중 오류 발생 (테이블이 없거나 권한 문제):', seedErr);
-          }
-        }
-      } catch (err) {
-        console.error('초기 로딩 중 알 수 없는 오류 발생:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initApp();
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(async () => {
-      const overdueTickets = tickets.filter(t =>
-        t.status !== TicketStatus.COMPLETED &&
-        t.status !== TicketStatus.DELAYED &&
-        isOverdue(t.dueDate)
-      );
-
-      const autoReceiveTickets = tickets.filter(t =>
-        t.status === TicketStatus.WAITING &&
-        isAfter(new Date(), addBusinessHours(new Date(t.createdAt), 4))
-      );
-
-      if (overdueTickets.length > 0 || autoReceiveTickets.length > 0) {
-        setTickets(prev => prev.map(t => {
-          // 1. Overdue Check
-          if (t.status !== TicketStatus.COMPLETED && t.status !== TicketStatus.DELAYED && isOverdue(t.dueDate)) {
-            return { ...t, status: TicketStatus.DELAYED };
-          }
-          // 2. Auto Receive Check (4 Business Hours)
-          if (t.status === TicketStatus.WAITING && isAfter(new Date(), addBusinessHours(new Date(t.createdAt), 4))) {
-            return { ...t, status: TicketStatus.RECEIVED_AUTO };
-          }
-          return t;
-        }));
-
-        // Add history entries
-        for (const t of overdueTickets) {
-          const historyEntry: HistoryEntry = { id: `h-${Date.now()}-${t.id}`, ticketId: t.id, status: TicketStatus.DELAYED, changedBy: 'System', timestamp: new Date().toISOString(), note: '기한 도과로 인해 상태가 지연(DELAYED)으로 자동 변경되었습니다.' };
-          await storage.saveHistoryEntry(historyEntry);
-        }
-        for (const t of autoReceiveTickets) {
-          const historyEntry: HistoryEntry = { id: `h-${Date.now()}-${t.id}`, ticketId: t.id, status: TicketStatus.RECEIVED_AUTO, changedBy: 'System', timestamp: new Date().toISOString(), note: '접수 대기 4근무시간 경과로 인해 상태가 접수(자동)으로 변경되었습니다.' };
-          await storage.saveHistoryEntry(historyEntry);
-        }
-      }
-    }, 60000);
-    return () => clearInterval(timer);
-  }, [tickets]);
-
-  // PERMISSION FILTERING
-  const filteredProjects = useMemo(() => {
-    if (currentUser.role === UserRole.ADMIN) return projects;
-
-    if (currentUser.role === UserRole.SUPPORT_LEAD) {
-      // 본인 및 부서원의 ID 리스트 확보
-      const teamUserIds = users
-        .filter(u =>
-          u.id === currentUser.id ||
-          (currentUser.department && u.department === currentUser.department)
-        )
-        .map(u => u.id);
-
-      // 본인이 배정되었거나 부서원이 배정된 프로젝트 필터링
-      return projects.filter(p => p.supportStaffIds.some(id => teamUserIds.includes(id)));
-    }
-
-    if (currentUser.role === UserRole.SUPPORT_STAFF) {
-      return projects.filter(p => p.supportStaffIds.includes(currentUser.id));
-    }
-
-    // 고객사는 본인이 담당자로 등록된 프로젝트만 조회
-    return projects.filter(p => p.customerContactIds.includes(currentUser.id));
-  }, [projects, users, currentUser]);
-
-  const filteredTickets = useMemo(() => {
-    if (currentUser.role === UserRole.ADMIN) return tickets;
-    const accessibleProjectIds = filteredProjects.map(p => p.id);
-    return tickets.filter(t => accessibleProjectIds.includes(t.projectId));
-  }, [tickets, filteredProjects, currentUser]);
-
-  const selectedTicket = useMemo(() =>
-    tickets.find(t => t.id === selectedTicketId), [tickets, selectedTicketId]
-  );
 
   const changeView = React.useCallback((newView: typeof view) => {
     setView(newView);
     setIsSidebarOpen(false);
   }, []);
+
+  const {
+    handleCreateTicket,
+    handleUpdateTicket,
+    handleDeleteTicket,
+    updateTicketStatus,
+    addComment
+  } = useTicketHandlers({
+    currentUser,
+    users,
+    projects,
+    tickets,
+    setTickets,
+    setHistory,
+    setComments,
+    changeView
+  });
+
+  useBackgroundTasks(tickets, setTickets, setHistory);
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
@@ -282,149 +149,36 @@ const App: React.FC = () => {
     setIsSidebarOpen(false);
   };
 
-  // HANDLERS
-  const handleCreateTicket = React.useCallback(async (newTicket: Omit<Ticket, 'id' | 'createdAt' | 'status'>) => {
-    const project = projects.find(p => p.id === newTicket.projectId);
-    const pmId = project?.supportStaffIds[0];
-    const pmUser = users.find(u => u.id === pmId);
-    const ticket: Ticket = {
-      ...newTicket,
-      id: `T-${Math.floor(Math.random() * 9000) + 1000}`,
-      createdAt: new Date().toISOString(),
-      status: currentUser.role === UserRole.CUSTOMER ? TicketStatus.WAITING : (newTicket.plan ? TicketStatus.IN_PROGRESS : TicketStatus.RECEIVED),
-      supportId: pmId,
-      supportName: pmUser?.name,
-    };
+  // PERMISSION FILTERING
+  const filteredProjects = useMemo(() => {
+    if (currentUser.role === UserRole.ADMIN) return projects;
 
-    setTickets(prev => [ticket, ...prev]);
-    const historyEntry: HistoryEntry = { id: `h-${Date.now()}`, ticketId: ticket.id, status: ticket.status, changedBy: currentUser.name, timestamp: new Date().toISOString(), note: '티켓이 신규 등록되었습니다.' };
-    setHistory(prev => [historyEntry, ...prev]);
-
-    await storage.saveTicket(ticket);
-    await storage.saveHistoryEntry(historyEntry);
-
-    changeView('list');
-  }, [projects, users, currentUser, changeView]);
-
-  const handleUpdateTicket = React.useCallback(async (id: string, updatedData: Partial<Ticket>) => {
-    const ticket = tickets.find(t => t.id === id);
-    if (!ticket) return;
-    const updatedTicket = { ...ticket, ...updatedData };
-
-    setTickets(prev => prev.map(t => t.id === id ? updatedTicket : t));
-    const historyEntry: HistoryEntry = { id: `h-${Date.now()}`, ticketId: id, status: updatedTicket.status, changedBy: currentUser.name, timestamp: new Date().toISOString(), note: '티켓 정보가 수정되었습니다.' };
-    setHistory(prev => [historyEntry, ...prev]);
-
-    await storage.saveTicket(updatedTicket);
-    await storage.saveHistoryEntry(historyEntry);
-
-    changeView('list');
-    setEditingTicket(null);
-  }, [tickets, currentUser, changeView]);
-
-  const handleDeleteTicket = React.useCallback(async (id: string) => {
-    if (window.confirm('정말 이 티켓을 삭제하시겠습니까?')) {
-      setTickets(prev => prev.filter(t => t.id !== id));
-      setHistory(prev => prev.filter(h => h.ticketId !== id));
-      setComments(prev => prev.filter(c => c.ticketId !== id));
-      if (selectedTicketId === id) setSelectedTicketId(null);
-
-      await storage.deleteTicket(id);
-    }
-  }, [selectedTicketId]);
-
-  const updateTicketStatus = React.useCallback(async (ticketId: string, newStatus: TicketStatus, updates: Partial<Ticket> = {}, note?: string, action?: string) => {
-    const ticket = tickets.find(t => t.id === ticketId);
-    if (!ticket) return;
-
-    // Guard Clauses: Prevent reverting to WAITING or RECEIVED
-    if (newStatus === TicketStatus.WAITING && ticket.status !== TicketStatus.WAITING) {
-      console.warn('Cannot revert to WAITING status');
-      return;
-    }
-    if ((newStatus === TicketStatus.RECEIVED || newStatus === TicketStatus.RECEIVED_AUTO) &&
-      (ticket.status !== TicketStatus.WAITING && ticket.status !== TicketStatus.RECEIVED && ticket.status !== TicketStatus.RECEIVED_AUTO)) {
-      console.warn('Cannot revert to RECEIVED status from advanced states');
-      return;
-    }
-    // Prevent re-completing if already completed (unless reverting from completed, which is handled by specific logic elsewhere e.g. rejection)
-    if (newStatus === TicketStatus.COMPLETED && ticket.status === TicketStatus.COMPLETED) {
-      return;
+    if (currentUser.role === UserRole.SUPPORT_LEAD) {
+      const teamUserIds = users
+        .filter(u =>
+          u.id === currentUser.id ||
+          (currentUser.department && u.department === currentUser.department)
+        )
+        .map(u => u.id);
+      return projects.filter(p => p.supportStaffIds.some(id => teamUserIds.includes(id)));
     }
 
-    const updatedTicket = { ...ticket, ...updates, status: newStatus };
-
-    setTickets(prev => prev.map(t => t.id === ticketId ? updatedTicket : t));
-    const historyEntry: HistoryEntry = { id: `h-${Date.now()}`, ticketId, status: newStatus, changedBy: currentUser.name, timestamp: new Date().toISOString(), note: note || `상태가 ${newStatus}(으)로 변경되었습니다.`, action };
-    setHistory(prev => [historyEntry, ...prev]);
-
-    await storage.saveTicket(updatedTicket);
-    await storage.saveHistoryEntry(historyEntry);
-  }, [tickets, currentUser]);
-
-  const addComment = React.useCallback(async (commentData: Omit<Comment, 'id' | 'timestamp'>) => {
-    const comment: Comment = { ...commentData, id: `c-${Date.now()}`, timestamp: new Date().toISOString() };
-    setComments(prev => [comment, ...prev]);
-    await storage.saveComment(comment);
-  }, []);
-
-  const handleUpdateUser = React.useCallback(async (id: string, userData: Partial<User>) => {
-    setUsers(prev => {
-      const updated = prev.map(u => u.id === id ? { ...u, ...userData } : u);
-      const updatedUser = updated.find(u => u.id === id);
-      if (id === currentUser.id && updatedUser) {
-        setCurrentUser(updatedUser);
-      }
-      if (updatedUser) storage.saveUser(updatedUser);
-      return updated;
-    });
-  }, [currentUser.id]);
-
-  const handleUpdateOrgInfo = async (data: OrganizationInfo) => {
-    setOrgInfo(data);
-    await storage.saveOrganizationInfo(data);
-  };
-
-  const handleApplyState = async (newState: AppState) => {
-    setIsLoading(true);
-    try {
-      // 로컬 상태 업데이트
-      setCompanies(newState.companies);
-      setUsers(newState.users);
-      setProjects(newState.projects);
-      setTickets(newState.tickets);
-      setComments(newState.comments);
-      setHistory(newState.history);
-      if (newState.opsInfo) setOpsInfo(newState.opsInfo);
-      if (newState.orgInfo) setOrgInfo(newState.orgInfo);
-
-      const foundUser = newState.users.find(u => u.id === currentUser.id) || newState.users[0];
-      setCurrentUser(foundUser);
-
-      // Supabase 동기화 (기존 데이터 전체 삭제는 위험하므로 업데이트/삽입 위주로 처리)
-      // 실제 운영 환경에서는 TRUNCATE 후 시딩하거나 정교한 DIFF 알고리즘이 필요하지만,
-      // 여기서는 새로운 상태의 모든 객체를 upsert 합니다.
-      await storage.saveCompanies(newState.companies);
-      await storage.saveUsers(newState.users);
-      await storage.saveProjects(newState.projects);
-      await storage.saveTickets(newState.tickets);
-      await storage.saveComments(newState.comments);
-      await storage.saveHistoryEntries(newState.history);
-      if (newState.opsInfo) {
-        await storage.saveOpsInfos(newState.opsInfo);
-      }
-      if (newState.orgInfo) {
-        await storage.saveOrganizationInfo(newState.orgInfo);
-      }
-
-      console.log('Supabase 동기화 완료');
-    } catch (err) {
-      console.error('상태 적용 중 오류 발생:', err);
-    } finally {
-      setIsLoading(false);
+    if (currentUser.role === UserRole.SUPPORT_STAFF) {
+      return projects.filter(p => p.supportStaffIds.includes(currentUser.id));
     }
-  };
 
+    return projects.filter(p => p.customerContactIds.includes(currentUser.id));
+  }, [projects, users, currentUser]);
+
+  const filteredTickets = useMemo(() => {
+    if (currentUser.role === UserRole.ADMIN) return tickets;
+    const accessibleProjectIds = filteredProjects.map(p => p.id);
+    return tickets.filter(t => accessibleProjectIds.includes(t.projectId));
+  }, [tickets, filteredProjects, currentUser]);
+
+  const selectedTicket = useMemo(() =>
+    tickets.find(t => t.id === selectedTicketId), [tickets, selectedTicketId]
+  );
 
   const appUI = (
     <div className="flex min-h-screen bg-slate-50">
@@ -581,7 +335,6 @@ const App: React.FC = () => {
                   }}
                 />
               )}
-              {/* 운영정보 관리: 권한이 있는 프로젝트의 정보만 표시 */}
               {view === 'opsManagement' && (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.SUPPORT_LEAD || currentUser.role === UserRole.SUPPORT_STAFF) && (
                 <OperationalManagement
                   projects={filteredProjects}

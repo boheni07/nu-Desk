@@ -6,6 +6,7 @@ import {
   Mail, Phone, Smartphone, Lock, Eye, EyeOff, Building, MessageSquare,
   Power
 } from 'lucide-react';
+import { formatPhoneNumber, isValidEmail } from '../lib/formatters';
 
 interface Props {
   users: User[];
@@ -85,6 +86,11 @@ const UserManagement: React.FC<Props> = ({ users, companies, currentUser, orgInf
     }
     if (formData.role === UserRole.CUSTOMER && !formData.companyId) {
       alert('고객담당인 경우 고객사 선택은 필수입니다.');
+      return;
+    }
+
+    if (formData.email && !isValidEmail(formData.email)) {
+      alert('유효하지 않은 이메일 형식입니다.');
       return;
     }
 
@@ -319,7 +325,7 @@ const UserManagement: React.FC<Props> = ({ users, companies, currentUser, orgInf
                         className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                         placeholder="02-XXX-XXXX"
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) })}
                       />
                     </div>
                   </div>
@@ -332,7 +338,7 @@ const UserManagement: React.FC<Props> = ({ users, companies, currentUser, orgInf
                         className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                         placeholder="010-XXXX-XXXX"
                         value={formData.mobile}
-                        onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, mobile: formatPhoneNumber(e.target.value) })}
                       />
                     </div>
                   </div>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { OrganizationInfo } from '../types';
 import { Building2, Save, Users, Phone, Mail, MapPin, FileText, Briefcase, Globe } from 'lucide-react';
+import { formatPhoneNumber, formatBizNumber, isValidEmail } from '../lib/formatters';
 
 interface Props {
     initialData?: OrganizationInfo;
@@ -39,6 +40,12 @@ const OrganizationSettings: React.FC<Props> = ({ initialData, onUpdate }) => {
         e.preventDefault();
         setIsSaving(true);
         setMessage(null);
+        if (formData.email && !isValidEmail(formData.email)) {
+            setMessage({ type: 'error', text: '유효한 이메일 형식을 입력해주세요.' });
+            setIsSaving(false);
+            return;
+        }
+
         try {
             await onUpdate(formData);
             setMessage({ type: 'success', text: '기관 정보가 성공적으로 저장되었습니다.' });
@@ -51,7 +58,15 @@ const OrganizationSettings: React.FC<Props> = ({ initialData, onUpdate }) => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        let formattedValue = value;
+
+        if (name === 'phone') {
+            formattedValue = formatPhoneNumber(value);
+        } else if (name === 'bizNumber') {
+            formattedValue = formatBizNumber(value);
+        }
+
+        setFormData(prev => ({ ...prev, [name]: formattedValue }));
     };
 
     return (

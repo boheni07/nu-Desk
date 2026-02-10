@@ -101,7 +101,32 @@ const Login: React.FC<LoginProps> = ({ users, onLogin, dataSource, isConfigured,
                             </div>
                         )}
 
-                        {dbError && (
+                        {!isConfigured && (
+                            <div className="p-6 bg-rose-50 border-2 border-rose-100 rounded-[2rem] space-y-4 animate-in slide-in-from-top-4 duration-500">
+                                <div className="w-12 h-12 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-600 mb-2">
+                                    <Database size={24} />
+                                </div>
+                                <div className="space-y-1">
+                                    <h3 className="text-sm font-black text-rose-900 uppercase tracking-tight">Configuration Required</h3>
+                                    <p className="text-[11px] text-rose-600 font-bold leading-relaxed">
+                                        Supabase 연결 정보가 설정되지 않았습니다.<br />
+                                        Vercel 배포 버전이라면 **Settings > Environment Variables** 에서 `VITE_SUPABASE_URL`과 `KEY`를 입력하고 다시 배포해 주세요.
+                                    </p>
+                                </div>
+                                <div className="pt-2">
+                                    <a
+                                        href="https://vercel.com/docs/projects/environment-variables"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 text-[10px] font-black text-rose-700 hover:text-rose-800 transition-colors bg-white px-4 py-2 rounded-xl shadow-sm border border-rose-200"
+                                    >
+                                        Vercel Guide -&gt;
+                                    </a>
+                                </div>
+                            </div>
+                        )}
+
+                        {isConfigured && dbError && (
                             <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl space-y-2">
                                 <div className="flex items-center gap-2 text-rose-700">
                                     <AlertCircle size={16} />
@@ -114,7 +139,7 @@ const Login: React.FC<LoginProps> = ({ users, onLogin, dataSource, isConfigured,
                             </div>
                         )}
 
-                        {users.length === 0 && !isSubmitting && !dbError && (
+                        {isConfigured && users.length === 0 && !isSubmitting && !dbError && (
                             <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl space-y-2">
                                 <div className="flex items-center gap-2 text-amber-700">
                                     <AlertCircle size={16} />
@@ -129,8 +154,8 @@ const Login: React.FC<LoginProps> = ({ users, onLogin, dataSource, isConfigured,
 
                         <button
                             type="submit"
-                            disabled={isSubmitting || (users.length === 0 && isConfigured)}
-                            className={`w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all active:scale-95 group relative overflow-hidden ${isSubmitting || (users.length === 0 && isConfigured) ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+                            disabled={isSubmitting || !isConfigured || (users.length === 0 && isConfigured)}
+                            className={`w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all active:scale-95 group relative overflow-hidden ${isSubmitting || !isConfigured || (users.length === 0 && isConfigured) ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'}`}
                         >
                             <div className="flex items-center justify-center gap-3">
                                 {isSubmitting ? (

@@ -111,7 +111,7 @@ const Login: React.FC<LoginProps> = ({ users, onLogin, dataSource, isConfigured,
                                     <h3 className="text-sm font-black text-rose-900 uppercase tracking-tight">Configuration Required</h3>
                                     <p className="text-[11px] text-rose-600 font-bold leading-relaxed">
                                         Supabase 연결 정보가 설정되지 않았습니다.<br />
-                                        Vercel 배포 버전이라면 **Settings > Environment Variables** 에서 `VITE_SUPABASE_URL`과 `KEY`를 입력하고 다시 배포해 주세요.
+                                        Vercel 배포 버전이라면 **Settings &gt; Environment Variables** 에서 `VITE_SUPABASE_URL`과 `KEY`를 입력하고 다시 배포해 주세요.
                                     </p>
                                 </div>
                                 <div className="pt-2">

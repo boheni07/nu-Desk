@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
-import { Project, Company, User, UserRole, ProjectStatus, Ticket } from '../types';
+import { Project, Company, User, UserRole, ProjectStatus, Ticket, TicketStatus } from '../types';
 import {
   Plus, Edit2, Trash2, X, Search, Briefcase, Calendar,
   User as UserIcon, Building, MessageSquare, ShieldCheck,
-  Power, Check
+  Check, MoreHorizontal, LayoutGrid, List as ListIcon,
+  Clock
 } from 'lucide-react';
 import DeleteConfirmModal from './common/DeleteConfirmModal';
 import { useToast } from '../contexts/ToastContext';
@@ -25,6 +26,7 @@ const ProjectManagement: React.FC<Props> = ({ projects, companies, users, ticket
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   // Delete Confirmation State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -148,115 +150,253 @@ const ProjectManagement: React.FC<Props> = ({ projects, companies, users, ticket
     });
   };
 
+  const getProjectProgress = (projectId: string) => {
+    const projectTickets = tickets.filter(t => t.projectId === projectId);
+    const total = projectTickets.length;
+    if (total === 0) return 0;
+    const completed = projectTickets.filter(t => t.status === TicketStatus.COMPLETED).length;
+    return Math.round((completed / total) * 100);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input
-            type="text"
-            placeholder="프로젝트명 또는 설명 검색..."
-            className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-80 shadow-sm"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+            <Briefcase className="text-blue-600" size={24} />
+            프로젝트 관리
+            <span className="text-sm font-normal text-slate-500 ml-2 bg-slate-100 px-2 py-0.5 rounded-full">
+              Total {projects.length}
+            </span>
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">등록된 프로젝트 현황을 조회하고 관리합니다.</p>
         </div>
-        {/* RBAC: Only Admin/Support can add project */}
-        {/* RBAC: Admin and Support roles can add project */}
-        {currentUser.role !== UserRole.CUSTOMER && (
-          <button
-            onClick={handleOpenAddModal}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-md"
-          >
-            <Plus size={18} /> 프로젝트 추가
-          </button>
-        )}
+
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-none">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="프로젝트 검색..."
+              className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64 transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              <ListIcon size={18} />
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              <LayoutGrid size={18} />
+            </button>
+          </div>
+
+          {currentUser.role !== UserRole.CUSTOMER && (
+            <button
+              onClick={handleOpenAddModal}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-100 whitespace-nowrap"
+            >
+              <Plus size={18} />
+              <span className="hidden sm:inline">신규 등록</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm">
-              <th className="px-6 py-4 font-semibold">프로젝트명</th>
-              <th className="px-6 py-4 font-semibold">고객사</th>
-              <th className="px-6 py-4 font-semibold">상태</th>
-              <th className="px-6 py-4 font-semibold">기간</th>
-              <th className="px-6 py-4 font-semibold">담당자 (PM)</th>
-              <th className="px-6 py-4 font-semibold text-right">관리</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {filteredProjects.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
-                  배정된 프로젝트가 없거나 검색 결과가 없습니다.
-                </td>
+      {/* Content Section */}
+      {viewMode === 'list' ? (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-200 text-slate-500 text-sm">
+                <th className="px-6 py-4 font-semibold w-[30%]">프로젝트명</th>
+                <th className="px-6 py-4 font-semibold w-[15%]">고객사</th>
+                <th className="px-6 py-4 font-semibold w-[20%]">기간</th>
+                <th className="px-6 py-4 font-semibold w-[20%]">팀 구성 (PM)</th>
+                <th className="px-6 py-4 font-semibold w-[10%]">상태</th>
+                <th className="px-6 py-4 font-semibold w-[5%] text-right">관리</th>
               </tr>
-            ) : (
-              filteredProjects.map(project => {
-                const client = companies.find(c => c.id === project.clientId);
-                const pm = users.find(u => u.id === project.supportStaffIds[0]);
-                const isActive = project.status === ProjectStatus.ACTIVE;
-                return (
-                  <tr key={project.id} className="hover:bg-slate-50 transition-colors group text-sm">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold ${isActive ? 'bg-indigo-50 text-indigo-500' : 'bg-slate-100 text-slate-400'}`}>
-                          <Briefcase size={18} />
-                        </div>
-                        <div>
-                          <p className={`font-bold ${isActive ? 'text-slate-700' : 'text-slate-400'}`}>{project.name}</p>
-                          <p className="text-[11px] text-slate-400 truncate max-w-xs">{project.description}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-slate-600 font-medium">{client?.name || '정보 없음'}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${isActive ? 'bg-green-100 text-green-700 border-green-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
-                        {project.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-500 text-xs">
-                      {project.startDate && project.endDate
-                        ? `${project.startDate} ~ ${project.endDate}`
-                        : '-'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {pm ? (
-                          <>
-                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
-                              {pm.name.charAt(0)}
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredProjects.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-20 text-center text-slate-400">
+                    <div className="flex flex-col items-center gap-3">
+                      <Briefcase size={40} className="text-slate-200" />
+                      <p>등록된 프로젝트가 없거나 검색 결과가 없습니다.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredProjects.map(project => {
+                  const client = companies.find(c => c.id === project.clientId);
+                  const pm = users.find(u => u.id === project.supportStaffIds[0]);
+                  const isActive = project.status === ProjectStatus.ACTIVE;
+
+                  return (
+                    <tr key={project.id} className="hover:bg-slate-50/80 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="flex items-start gap-3">
+                          <div className={`mt-1 w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-sm shrink-0 ${isActive ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                            {project.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className={`font-bold text-base ${isActive ? 'text-slate-800' : 'text-slate-400'}`}>{project.name}</span>
                             </div>
-                            <span className="font-semibold text-slate-700">{pm.name}</span>
-                            <span className="text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-bold border border-indigo-100">PM</span>
-                          </>
-                        ) : '-'}
+                            <p className="text-sm text-slate-500 mt-1 line-clamp-1 max-w-md">{project.description}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-medium text-slate-700">
+                          {client?.name || 'Unknown Client'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1 text-sm text-slate-500">
+                          <Calendar size={14} className="text-slate-400" />
+                          {project.startDate ? project.startDate.replace(/-/g, '.') : '-'} ~ {project.endDate ? project.endDate.replace(/-/g, '.') : '-'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center -space-x-2">
+                          {project.supportStaffIds.slice(0, 4).map((staffId, index) => {
+                            const staff = users.find(u => u.id === staffId);
+                            if (!staff) return null;
+                            const isPM = index === 0;
+                            return (
+                              <div
+                                key={staffId}
+                                className={`relative w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold text-white shadow-sm hover:z-10 hover:scale-110 transition-transform cursor-help
+                                   ${isPM ? 'bg-indigo-500 z-10' : 'bg-slate-400'}
+                                 `}
+                                title={`${staff.name} ${isPM ? '(PM)' : ''}`}
+                              >
+                                {staff.name.charAt(0)}
+                                {isPM && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-white rounded-full flex items-center justify-center"><div className="w-1.5 h-1.5 bg-yellow-400 rounded-full"></div></div>}
+                              </div>
+                            );
+                          })}
+                          {project.supportStaffIds.length > 4 && (
+                            <div className="w-8 h-8 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-500">
+                              +{project.supportStaffIds.length - 4}
+                            </div>
+                          )}
+                        </div>
+                        {pm && <div className="text-xs text-slate-500 mt-1 ml-1">PM: {pm.name}</div>}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${isActive
+                            ? 'bg-green-50 text-green-700 border-green-200'
+                            : 'bg-slate-100 text-slate-500 border-slate-200'
+                          }`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`} />
+                          {project.status}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                          {currentUser.role !== UserRole.CUSTOMER && (
+                            <>
+                              <button onClick={() => handleOpenEditModal(project)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="수정">
+                                <Edit2 size={16} />
+                              </button>
+                              <button onClick={() => handleOpenDeleteModal(project)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="삭제">
+                                <Trash2 size={16} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProjects.map(project => {
+            const client = companies.find(c => c.id === project.clientId);
+            const pm = users.find(u => u.id === project.supportStaffIds[0]);
+            const isActive = project.status === ProjectStatus.ACTIVE;
+
+            return (
+              <div key={project.id} className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow group relative overflow-hidden">
+                {/* Status Badge */}
+                <div className={`absolute top-4 right-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${isActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-100 text-slate-500 border-slate-200'
+                  }`}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500' : 'bg-slate-400'}`} />
+                  {project.status}
+                </div>
+
+                <div className="flex items-start gap-4 mb-4">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm ${isActive ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                    {project.name.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0 pr-16">
+                    <h3 className={`font-bold text-lg truncate ${isActive ? 'text-slate-800' : 'text-slate-500'}`}>{project.name}</h3>
+                    <p className="text-xs text-slate-500 truncate">{client?.name}</p>
+                  </div>
+                </div>
+
+                <p className="text-sm text-slate-600 line-clamp-3 h-14 mb-4">{project.description || '설명 없음'}</p>
+
+                <div className="space-y-3 mb-5">
+                  {/* Dates */}
+                  <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 p-2 rounded-lg">
+                    <Clock size={14} className="text-slate-400" />
+                    {project.startDate ? project.startDate.replace(/-/g, '.') : '-'} ~ {project.endDate ? project.endDate.replace(/-/g, '.') : '-'}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                  <div className="flex items-center -space-x-2">
+                    {project.supportStaffIds.slice(0, 3).map((staffId, index) => {
+                      const staff = users.find(u => u.id === staffId);
+                      if (!staff) return null;
+                      return (
+                        <div key={staffId} className="w-7 h-7 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-600" title={staff.name}>
+                          {staff.name.charAt(0)}
+                        </div>
+                      )
+                    })}
+                    {project.supportStaffIds.length > 3 && (
+                      <div className="w-7 h-7 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-400">
+                        +{project.supportStaffIds.length - 3}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {currentUser.role !== UserRole.CUSTOMER && (
-                          <>
-                            <button onClick={() => handleOpenEditModal(project)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="수정">
-                              <Edit2 size={16} />
-                            </button>
-                            <button onClick={() => handleOpenDeleteModal(project)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="삭제">
-                              <Trash2 size={16} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    {currentUser.role !== UserRole.CUSTOMER && (
+                      <>
+                        <button onClick={() => handleOpenEditModal(project)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                          <Edit2 size={16} />
+                        </button>
+                        <button onClick={() => handleOpenDeleteModal(project)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">

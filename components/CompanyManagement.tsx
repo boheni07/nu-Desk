@@ -118,76 +118,115 @@ const CompanyManagement: React.FC<Props> = ({ companies, users, projects, ticket
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input
-            type="text"
-            placeholder="기관명, 대표자, 업종 검색..."
-            className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-80 shadow-sm"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+            <Building2 className="text-blue-600" size={24} />
+            고객사 관리
+            <span className="text-sm font-normal text-slate-500 ml-2 bg-slate-100 px-2 py-0.5 rounded-full">
+              Total {companies.length}
+            </span>
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">프로젝트를 의뢰하는 고객사 정보를 관리합니다.</p>
         </div>
-        <button
-          onClick={handleOpenAddModal}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-md"
-        >
-          <Plus size={18} /> 고객사 추가
-        </button>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-none">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="기관명, 대표자, 업종 검색..."
+              className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64 transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button
+            onClick={handleOpenAddModal}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-100 whitespace-nowrap"
+          >
+            <Plus size={18} />
+            <span className="hidden sm:inline">고객사 추가</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table className="w-full text-left">
+        <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm">
-              <th className="px-6 py-4 font-semibold">기관명*</th>
-              <th className="px-6 py-4 font-semibold">대표자</th>
-              <th className="px-6 py-4 font-semibold">업종</th>
-              <th className="px-6 py-4 font-semibold text-center">상태</th>
-              <th className="px-6 py-4 font-semibold text-right">관리</th>
+            <tr className="bg-slate-50/50 border-b border-slate-200 text-slate-500 text-sm">
+              <th className="px-4 py-4 font-semibold w-[20%]">기관명</th>
+              <th className="px-4 py-4 font-semibold w-[15%]">대표자</th>
+              <th className="px-4 py-4 font-semibold w-[15%]">업종</th>
+              <th className="px-4 py-4 font-semibold w-[10%] text-center">상태</th>
+              <th className="px-4 py-4 font-semibold w-[30%]">주소</th>
+              <th className="px-4 py-4 font-semibold w-[10%] text-right">관리</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredCompanies.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
-                  검색 결과가 없습니다.
+                <td colSpan={6} className="px-6 py-20 text-center text-slate-400">
+                  <div className="flex flex-col items-center gap-3">
+                    <Building2 size={40} className="text-slate-200" />
+                    <p>등록된 고객사가 없거나 검색 결과가 없습니다.</p>
+                  </div>
                 </td>
               </tr>
             ) : (
               filteredCompanies.map(company => {
                 const isActive = company.status === CompanyStatus.ACTIVE;
                 return (
-                  <tr key={company.id} className={`hover:bg-slate-50 transition-colors group text-sm ${!isActive ? 'bg-slate-50/50 opacity-60' : ''}`}>
-                    <td className="px-6 py-4">
+                  <tr key={company.id} className={`hover:bg-slate-50/80 transition-colors group ${!isActive ? 'opacity-70 bg-slate-50/50' : ''}`}>
+                    <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? 'bg-blue-50 text-blue-500' : 'bg-slate-200 text-slate-400'}`}>
-                          <Building2 size={16} />
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-sm ${isActive ? 'bg-white border border-slate-200 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
+                          <Building2 size={20} />
                         </div>
-                        <span className={`font-bold ${isActive ? 'text-slate-700' : 'text-slate-400'}`}>{company.name}</span>
+                        <div>
+                          <div className={`font-bold text-base ${isActive ? 'text-slate-800' : 'text-slate-500'}`}>{company.name}</div>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600">{company.representative || '-'}</td>
-                    <td className="px-6 py-4 text-slate-600">{company.industry || '-'}</td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${isActive ? 'bg-green-100 text-green-700 border-green-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
-                        {isActive ? <Power size={10} className="text-green-600" /> : <Power size={10} className="text-slate-400" />}
-                        {company.status}
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                        <UserCircle size={14} className="text-slate-400" />
+                        {company.representative || <span className="text-slate-300">-</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                        <Briefcase size={12} className="text-slate-400" />
+                        {company.industry || '미지정'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <td className="px-4 py-4 text-center">
+                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border justify-center ${isActive
+                        ? 'bg-green-50 text-green-700 border-green-200'
+                        : 'bg-slate-100 text-slate-500 border-slate-200'
+                        }`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500' : 'bg-slate-400'}`} />
+                        {company.status}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-start gap-1.5 text-xs text-slate-500 max-w-[200px] truncate" title={company.address}>
+                        {company.address && <MapPin size={12} className="text-slate-400 shrink-0 mt-0.5" />}
+                        {company.address || <span className="text-slate-300">-</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleOpenEditModal(company)}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="수정"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button
                           onClick={() => handleOpenDeleteModal(company)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="삭제"
                         >
                           <Trash2 size={16} />

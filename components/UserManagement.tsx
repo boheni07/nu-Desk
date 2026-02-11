@@ -139,105 +139,162 @@ const UserManagement: React.FC<Props> = ({ users, companies, projects, tickets, 
 
   const getRoleBadge = (role: UserRole) => {
     switch (role) {
-      case UserRole.ADMIN: return 'bg-purple-100 text-purple-700 border-purple-200';
-      case UserRole.SUPPORT_LEAD: return 'bg-indigo-100 text-indigo-700 border-indigo-200';
-      case UserRole.SUPPORT_STAFF: return 'bg-indigo-50 text-indigo-600 border-indigo-100';
-      case UserRole.CUSTOMER: return 'bg-blue-100 text-blue-700 border-blue-200';
-      default: return 'bg-slate-100 text-slate-600';
+      case UserRole.ADMIN: return 'bg-purple-50 text-purple-700 border-purple-200';
+      case UserRole.SUPPORT_LEAD: return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+      case UserRole.SUPPORT_STAFF: return 'bg-blue-50 text-blue-700 border-blue-200';
+      case UserRole.CUSTOMER: return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      default: return 'bg-slate-50 text-slate-600 border-slate-200';
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input
-            type="text"
-            placeholder="성명, ID, 역할 검색..."
-            className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-80 shadow-sm"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+            <UserIcon className="text-blue-600" size={24} />
+            회원 관리
+            <span className="text-sm font-normal text-slate-500 ml-2 bg-slate-100 px-2 py-0.5 rounded-full">
+              Total {users.length}
+            </span>
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">시스템 접속 권한을 가진 사용자 계정을 관리합니다.</p>
         </div>
-        <button
-          onClick={handleOpenAddModal}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-md"
-        >
-          <Plus size={18} /> 회원 추가
-        </button>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-none">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="이름, ID, 역할 검색..."
+              className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64 transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button
+            onClick={handleOpenAddModal}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-100 whitespace-nowrap"
+          >
+            <Plus size={18} />
+            <span className="hidden sm:inline">회원 추가</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table className="w-full text-left">
+        <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm">
-              <th className="px-6 py-4 font-semibold">성명</th>
-              <th className="px-6 py-4 font-semibold">ID</th>
-              <th className="px-6 py-4 font-semibold">종류</th>
-              <th className="px-6 py-4 font-semibold">상태</th>
-              <th className="px-6 py-4 font-semibold">휴대폰</th>
-              <th className="px-6 py-4 font-semibold">소속</th>
-              <th className="px-6 py-4 font-semibold text-right">관리</th>
+            <tr className="bg-slate-50/50 border-b border-slate-200 text-slate-500 text-sm">
+              <th className="px-4 py-4 font-semibold w-[10%]">ID</th>
+              <th className="px-4 py-4 font-semibold w-[15%]">성명</th>
+              <th className="px-4 py-4 font-semibold w-[12%]">역할 (권한)</th>
+              <th className="px-4 py-4 font-semibold w-[10%]">상태</th>
+              <th className="px-4 py-4 font-semibold w-[18%]">연락처</th>
+              <th className="px-4 py-4 font-semibold w-[25%]">소속 정보</th>
+              <th className="px-4 py-4 font-semibold w-[10%] text-right">관리</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {filteredUsers.map(user => {
-              const isActive = user.status === UserStatus.ACTIVE;
-              return (
-                <tr key={user.id} className={`hover:bg-slate-50 transition-colors group text-sm ${!isActive ? 'opacity-60 grayscale-[0.5]' : ''}`}>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${isActive ? 'bg-slate-100 text-slate-500' : 'bg-slate-200 text-slate-400'}`}>
-                        {user.name.charAt(0)}
+            {filteredUsers.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-6 py-20 text-center text-slate-400">
+                  <div className="flex flex-col items-center gap-3">
+                    <UserIcon size={40} className="text-slate-200" />
+                    <p>등록된 회원이 없거나 검색 결과가 없습니다.</p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              filteredUsers.map(user => {
+                const isActive = user.status === UserStatus.ACTIVE;
+                return (
+                  <tr key={user.id} className={`hover:bg-slate-50/80 transition-colors group ${!isActive ? 'opacity-70 bg-slate-50/50' : ''}`}>
+                    <td className="px-4 py-4">
+                      <span className="font-mono text-slate-600 text-sm font-bold">{user.loginId}</span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${isActive ? 'bg-white border border-slate-200 text-slate-700' : 'bg-slate-100 text-slate-400'}`}>
+                          {user.name.charAt(0)}
+                        </div>
+                        <div className={`font-bold text-base ${isActive ? 'text-slate-800' : 'text-slate-500'}`}>{user.name}</div>
                       </div>
-                      <span className={`font-bold ${isActive ? 'text-slate-700' : 'text-slate-400'}`}>{user.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-slate-600">{user.loginId}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1 w-fit ${getRoleBadge(user.role)}`}>
-                      {user.role === UserRole.ADMIN && <Shield size={10} />}
-                      {user.role === UserRole.ADMIN ? '관리자' :
-                        user.role === UserRole.SUPPORT_LEAD ? '지원팀장' :
-                          user.role === UserRole.SUPPORT_STAFF ? '지원담당' : '고객담당'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${isActive ? 'bg-green-100 text-green-700 border-green-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-600">{user.mobile || '-'}</td>
-                  <td className="px-6 py-4 text-slate-600">
-                    {user.role === UserRole.CUSTOMER
-                      ? companies.find(c => c.id === user.companyId)?.name || 'N/A'
-                      : user.department || <span className="text-slate-300 italic">본사 (nu)</span>}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleOpenEditModal(user)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="수정">
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (user.loginId === 'admin1') {
-                            showToast('시스템 관리자 계정(admin1)은 삭제할 수 없습니다.', 'error');
-                            return;
-                          }
-                          handleOpenDeleteModal(user);
-                        }}
-                        className={`p-1.5 rounded-md transition-colors ${user.loginId === 'admin1' ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
-                        title={user.loginId === 'admin1' ? "삭제 불가" : "삭제"}
-                        disabled={user.loginId === 'admin1'}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${getRoleBadge(user.role)}`}>
+                        {user.role === UserRole.ADMIN && <Shield size={10} />}
+                        {user.role === UserRole.ADMIN ? '관리자' :
+                          user.role === UserRole.SUPPORT_LEAD ? '지원팀장' :
+                            user.role === UserRole.SUPPORT_STAFF ? '지원담당' : '고객담당'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${isActive
+                        ? 'bg-green-50 text-green-700 border-green-200'
+                        : 'bg-slate-100 text-slate-500 border-slate-200'
+                        }`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`} />
+                        {user.status}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                          <Phone size={14} className="text-slate-400 shrink-0" />
+                          <span className={user.phone ? '' : 'text-slate-300'}>{user.phone || '-'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                          <Smartphone size={14} className="text-slate-400 shrink-0" />
+                          <span className={user.mobile ? '' : 'text-slate-300'}>{user.mobile || '-'}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                        {user.role === UserRole.CUSTOMER ? (
+                          <>
+                            <Building size={14} className="text-slate-400" />
+                            <span className="font-medium text-slate-700">
+                              {companies.find(c => c.id === user.companyId)?.name || <span className="text-slate-400 italic">미지정</span>}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <Shield size={14} className="text-slate-400" />
+                            <span className="font-medium text-slate-700">
+                              {user.department || '본사 (nu)'}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => handleOpenEditModal(user)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="수정">
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (user.loginId === 'admin1') {
+                              showToast('시스템 관리자 계정(admin1)은 삭제할 수 없습니다.', 'error');
+                              return;
+                            }
+                            handleOpenDeleteModal(user);
+                          }}
+                          className={`p-2 rounded-lg transition-colors ${user.loginId === 'admin1' ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
+                          title={user.loginId === 'admin1' ? "삭제 불가" : "삭제"}
+                          disabled={user.loginId === 'admin1'}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

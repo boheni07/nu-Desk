@@ -111,6 +111,10 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
       if (isSupport || isAdmin) {
         payload.intakeMethod = intakeMethod;
         payload.requestDate = new Date(requestDate).toISOString();
+        // 지원팀 등록 시 처리기한과 완료예정일을 동일하게 설정
+        if (isSupport) {
+          payload.expectedCompletionDate = payload.dueDate;
+        }
       }
 
       await onSubmit(payload);

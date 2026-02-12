@@ -37,6 +37,7 @@ import * as storage from './lib/storage';
 import { useAppState } from './hooks/useAppState';
 import { useTicketHandlers } from './hooks/useTicketHandlers';
 import { useBackgroundTasks } from './hooks/useBackgroundTasks';
+import Dashboard from './components/Dashboard';
 import Sidebar from './components/layout/Sidebar';
 import AppHeader from './components/layout/AppHeader';
 
@@ -70,7 +71,7 @@ const App: React.FC = () => {
     userCount
   } = useAppState();
 
-  const [view, setView] = useState<'list' | 'completed_list' | 'create' | 'edit' | 'detail' | 'companies' | 'users' | 'projects' | 'profile' | 'dataManagement' | 'opsManagement' | 'orgSettings'>('list');
+  const [view, setView] = useState<'dashboard' | 'list' | 'completed_list' | 'create' | 'edit' | 'detail' | 'companies' | 'users' | 'projects' | 'profile' | 'dataManagement' | 'opsManagement' | 'orgSettings'>('dashboard');
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -128,7 +129,7 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setIsLoggedIn(false);
     localStorage.removeItem('nu_session');
-    setView('list');
+    setView('dashboard');
     setIsSidebarOpen(false);
   };
 
@@ -201,6 +202,7 @@ const App: React.FC = () => {
             <div className="mb-6 lg:mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                  {view === 'dashboard' && 'Dashboard Overview'}
                   {view === 'list' && 'Active Tickets'}
                   {view === 'completed_list' && 'Completed Tickets'}
                   {view === 'create' && 'Create New Ticket'}
@@ -214,12 +216,25 @@ const App: React.FC = () => {
                   {view === 'orgSettings' && 'Organization Settings'}
                   {view === 'dataManagement' && 'Data Management'}
                 </h2>
-                <p className="text-slate-500 text-sm sm:text-base mt-1">안녕하세요, {currentUser.name}님! {view === 'list' && '현재 활성화된 티켓 리스트입니다.'}</p>
+                <p className="text-slate-500 text-sm sm:text-base mt-1">안녕하세요, {currentUser.name}님! {view === 'dashboard' ? '오늘의 시스템 현황입니다.' : view === 'list' && '현재 활성화된 티켓 리스트입니다.'}</p>
               </div>
               {(view === 'detail' || view === 'edit' || view === 'dataManagement' || view === 'orgSettings') && <button onClick={() => changeView('list')} className="flex items-center gap-2 text-slate-500 hover:text-blue-600 font-bold px-4 py-2 rounded-xl border border-slate-200 bg-white shadow-sm transition-all self-start"><ChevronLeft size={20} /> Back to List</button>}
             </div>
 
             <div className="relative">
+              {view === 'dashboard' && (
+                <Dashboard
+                  tickets={filteredTickets}
+                  projects={filteredProjects}
+                  users={users}
+                  currentUser={currentUser}
+                  history={history}
+                  comments={comments}
+                  onViewTickets={(status) => setView(status === TicketStatus.COMPLETED ? 'completed_list' : 'list')}
+                  onViewProjects={() => setView('projects')}
+                  onSelectTicket={(id) => { setSelectedTicketId(id); setView('detail'); }}
+                />
+              )}
               {view === 'list' && <TicketList tickets={filteredTickets.filter(t => t.status !== TicketStatus.COMPLETED)} currentUser={currentUser} onSelect={(id) => { setSelectedTicketId(id); setView('detail'); }} onEdit={(ticket) => { setEditingTicket(ticket); setView('edit'); }} onDelete={handleDeleteTicket} />}
               {view === 'completed_list' && <TicketList tickets={filteredTickets.filter(t => t.status === TicketStatus.COMPLETED)} currentUser={currentUser} onSelect={(id) => { setSelectedTicketId(id); setView('detail'); }} onEdit={(ticket) => { setEditingTicket(ticket); setView('edit'); }} onDelete={handleDeleteTicket} />}
               {view === 'create' && <TicketCreate projects={filteredProjects.filter(p => p.status === ProjectStatus.ACTIVE)} currentUser={currentUser} onSubmit={handleCreateTicket} onCancel={() => changeView('list')} />}

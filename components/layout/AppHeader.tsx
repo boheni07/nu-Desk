@@ -22,7 +22,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             >
                 <Menu size={24} />
             </button>
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-1.5">
+            <h2
+                className="text-base font-bold text-slate-900 flex items-center gap-1.5 cursor-pointer"
+                onClick={() => changeView('dashboard')}
+            >
                 <span className="bg-blue-600 px-1.5 py-0.5 rounded-md text-white text-[10px]">nu</span>
                 Desk
             </h2>

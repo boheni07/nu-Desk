@@ -2,6 +2,7 @@
 import React from 'react';
 import {
     PlusCircle,
+    LayoutDashboard,
     Ticket as TicketIcon,
     Archive,
     Briefcase,
@@ -49,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             )}
             <aside className={`fixed inset-y-0 left-0 w-72 bg-slate-900 text-white flex flex-col z-50 transition-transform duration-300 transform lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-8 border-b border-slate-800 flex justify-between items-center">
-                    <h1 className="text-2xl font-bold flex items-center gap-2 cursor-pointer" onClick={() => changeView('list')}>
+                    <h1 className="text-2xl font-bold flex items-center gap-2 cursor-pointer" onClick={() => changeView('dashboard')}>
                         <span className="bg-blue-600 p-2 rounded-xl text-white shadow-lg shadow-blue-500/20">nu</span>
                         ServiceDesk
                     </h1>
@@ -59,6 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 <nav className="flex-1 p-6 space-y-2 overflow-y-auto custom-scrollbar flex flex-col">
+                    <NavItem icon={LayoutDashboard} label="대시보드" targetView="dashboard" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
                     <NavItem icon={PlusCircle} label="New Ticket" targetView="create" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
                     <NavItem icon={TicketIcon} label="티켓 관리(진행중)" targetView="list" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
                     <NavItem icon={Archive} label="티켓 기록(완료)" targetView="completed_list" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />

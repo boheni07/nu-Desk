@@ -528,12 +528,17 @@ const TicketDetail: React.FC<Props> = ({
             confirmColor="bg-rose-600"
           >
             <div className="space-y-6">
+              <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">삭제 대상 티켓</p>
+                <h4 className="text-lg font-black text-slate-900 mb-1">{ticket.title}</h4>
+                <p className="text-xs font-mono font-bold text-blue-600">{ticket.id}</p>
+              </div>
               <div className="p-6 bg-rose-50 rounded-2xl border border-rose-100 flex gap-4 items-start">
                 <AlertTriangle className="text-rose-500 shrink-0" size={24} />
                 <div>
                   <p className="text-sm font-black text-rose-800 uppercase tracking-widest mb-1">주의 사항</p>
                   <p className="text-xs text-rose-600 font-medium leading-relaxed">
-                    티켓({ticket.id})을 정말 삭제하시겠습니까? <br />
+                    이 티켓을 정말 삭제하시겠습니까? <br />
                     삭제 시 모든 히스토리와 댓글이 함께 영구 삭제되며 복구할 수 없습니다.
                   </p>
                 </div>

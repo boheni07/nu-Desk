@@ -27,15 +27,15 @@ const getStatusColor = (status: TicketStatus) => {
 };
 
 const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, onDelete }) => {
-  const [ticketToDelete, setTicketToDelete] = useState<string | null>(null);
+  const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null);
 
-  const handleDeleteClick = (id: string) => {
-    setTicketToDelete(id);
+  const handleDeleteClick = (ticket: Ticket) => {
+    setTicketToDelete(ticket);
   };
 
   const confirmDelete = () => {
     if (ticketToDelete) {
-      onDelete(ticketToDelete);
+      onDelete(ticketToDelete.id);
       setTicketToDelete(null);
     }
   };
@@ -105,7 +105,7 @@ const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, o
                         </button>
                         {currentUser.role === UserRole.ADMIN && (
                           <button
-                            onClick={() => handleDeleteClick(ticket.id)}
+                            onClick={() => handleDeleteClick(ticket)}
                             className="p-1.5 bg-slate-50 text-slate-500 rounded-lg hover:text-red-600"
                           >
                             <Trash2 size={14} />
@@ -182,7 +182,7 @@ const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, o
                       </button>
                       {currentUser.role === UserRole.ADMIN && (
                         <button
-                          onClick={() => handleDeleteClick(ticket.id)}
+                          onClick={() => handleDeleteClick(ticket)}
                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="삭제"
                         >
@@ -208,12 +208,17 @@ const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, o
           confirmColor="bg-rose-600"
         >
           <div className="space-y-6">
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">삭제 대상 티켓</p>
+              <h4 className="text-lg font-black text-slate-900 mb-1">{ticketToDelete.title}</h4>
+              <p className="text-xs font-mono font-bold text-blue-600">{ticketToDelete.id}</p>
+            </div>
             <div className="p-6 bg-rose-50 rounded-2xl border border-rose-100 flex gap-4 items-start">
               <AlertTriangle className="text-rose-500 shrink-0" size={24} />
               <div>
                 <p className="text-sm font-black text-rose-800 uppercase tracking-widest mb-1">주의 사항</p>
                 <p className="text-xs text-rose-600 font-medium leading-relaxed">
-                  티켓({ticketToDelete})을 정말 삭제하시겠습니까? <br />
+                  이 티켓을 정말 삭제하시겠습니까? <br />
                   삭제 시 모든 히스토리와 댓글이 함께 영구 삭제되며 복구할 수 없습니다.
                 </p>
               </div>

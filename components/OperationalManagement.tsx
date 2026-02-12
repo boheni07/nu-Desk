@@ -28,7 +28,7 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projects[0]?.id || '');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<{ type: 'hardware' | 'software' | 'access', data: any } | null>(null);
-  const [deleteInfo, setDeleteInfo] = useState<{ type: 'hardware' | 'software' | 'access', id: string } | null>(null);
+  const [deleteInfo, setDeleteInfo] = useState<{ type: 'hardware' | 'software' | 'access', data: any } | null>(null);
 
   // 프로젝트 데이터가 로드되거나 변경될 때 selectedProjectId 동기화
   React.useEffect(() => {
@@ -72,15 +72,15 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
     }
   };
 
-  const handleDelete = (type: 'hardware' | 'software' | 'access', id: string) => {
-    setDeleteInfo({ type, id });
+  const handleDelete = (type: 'hardware' | 'software' | 'access', data: any) => {
+    setDeleteInfo({ type, data });
   };
 
   const confirmDelete = () => {
     if (deleteInfo) {
-      const { type, id } = deleteInfo;
+      const { type, data } = deleteInfo;
       const newOpsInfo = { ...currentOpsInfo };
-      const updatedList = (newOpsInfo[type] as any[]).filter(item => item.id !== id);
+      const updatedList = (newOpsInfo[type] as any[]).filter(item => item.id !== data.id);
       onUpdate({
         ...newOpsInfo,
         [type]: updatedList
@@ -181,7 +181,7 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-1">
                           <button onClick={() => { setEditingItem({ type: 'hardware', data: item }); setIsModalOpen(true); }} className="p-1.5 hover:bg-white rounded hover:shadow-sm text-slate-400 hover:text-blue-600 transition-all"><Edit2 size={14} /></button>
-                          <button onClick={() => handleDelete('hardware', item.id)} className="p-1.5 hover:bg-white rounded hover:shadow-sm text-slate-400 hover:text-rose-600 transition-all"><Trash2 size={14} /></button>
+                          <button onClick={() => handleDelete('hardware', item)} className="p-1.5 hover:bg-white rounded hover:shadow-sm text-slate-400 hover:text-rose-600 transition-all"><Trash2 size={14} /></button>
                         </div>
                       </td>
                     </tr>
@@ -220,7 +220,7 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-1">
                           <button onClick={() => { setEditingItem({ type: 'software', data: item }); setIsModalOpen(true); }} className="p-1.5 hover:bg-white rounded hover:shadow-sm text-slate-400 hover:text-blue-600 transition-all"><Edit2 size={14} /></button>
-                          <button onClick={() => handleDelete('software', item.id)} className="p-1.5 hover:bg-white rounded hover:shadow-sm text-slate-400 hover:text-rose-600 transition-all"><Trash2 size={14} /></button>
+                          <button onClick={() => handleDelete('software', item)} className="p-1.5 hover:bg-white rounded hover:shadow-sm text-slate-400 hover:text-rose-600 transition-all"><Trash2 size={14} /></button>
                         </div>
                       </td>
                     </tr>
@@ -251,7 +251,7 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
                   <tr><td colSpan={7} className="py-10 text-center text-slate-400 font-bold">데이터가 없습니다.</td></tr>
                 ) : (
                   currentOpsInfo.access.map(item => (
-                    <AccessRow key={item.id} item={item} onEdit={() => { setEditingItem({ type: 'access', data: item }); setIsModalOpen(true); }} onDelete={() => handleDelete('access', item.id)} />
+                    <AccessRow key={item.id} item={item} onEdit={() => { setEditingItem({ type: 'access', data: item }); setIsModalOpen(true); }} onDelete={() => handleDelete('access', item)} />
                   ))
                 )}
               </tbody>
@@ -297,12 +297,23 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
           confirmColor="bg-rose-600"
         >
           <div className="space-y-6">
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">삭제 대상 {deleteInfo.type === 'hardware' ? '하드웨어' : deleteInfo.type === 'software' ? '소프트웨어' : '접속'} 정보</p>
+              <h4 className="text-lg font-black text-slate-900 mb-1">
+                {deleteInfo.type === 'hardware' && `${deleteInfo.data.manufacturer} ${deleteInfo.data.model}`}
+                {deleteInfo.type === 'software' && deleteInfo.data.productVersion}
+                {deleteInfo.type === 'access' && deleteInfo.data.targetName}
+              </h4>
+              <p className="text-xs font-bold text-slate-500">
+                용도: {deleteInfo.data.usage || '-'}
+              </p>
+            </div>
             <div className="p-6 bg-rose-50 rounded-2xl border border-rose-100 flex gap-4 items-start">
               <AlertTriangle className="text-rose-500 shrink-0" size={24} />
               <div>
                 <p className="text-sm font-black text-rose-800 uppercase tracking-widest mb-1">주의 사항</p>
                 <p className="text-xs text-rose-600 font-medium leading-relaxed">
-                  선택한 {deleteInfo.type === 'hardware' ? '하드웨어' : deleteInfo.type === 'software' ? '소프트웨어' : '접속'} 정보를 정말 삭제하시겠습니까? <br />
+                  선택한 정보를 정말 삭제하시겠습니까? <br />
                   삭제 시 데이터가 영구적으로 제거되며 복구할 수 없습니다.
                 </p>
               </div>

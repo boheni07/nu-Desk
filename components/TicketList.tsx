@@ -85,14 +85,14 @@ const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, o
           return (
             <div
               key={ticket.id}
-              className="group bg-white border border-slate-200 lg:border-slate-100 rounded-2xl lg:rounded-3xl p-5 sm:p-6 lg:p-0 transition-all hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/5 cursor-pointer"
+              className="group bg-white border border-slate-200 lg:border-slate-100 rounded-xl lg:rounded-3xl p-3.5 sm:p-5 lg:p-0 transition-all hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/5 cursor-pointer"
             >
               {/* Mobile/Tablet Card Layout */}
               <div className="lg:hidden" onClick={() => onSelect(ticket.id)}>
                 <div className="flex justify-between items-start mb-4">
-                  <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{ticket.id}</span>
+                  <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50/50 px-1.5 py-0.5 rounded">{ticket.id}</span>
                   <div className="flex items-center gap-2">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${getStatusColor(ticket.status)}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${getStatusColor(ticket.status)}`}>
                       {ticket.status}
                     </span>
                     {canModify(ticket) && (
@@ -115,10 +115,10 @@ const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, o
                     )}
                   </div>
                 </div>
-                <h4 className="text-base font-bold text-slate-900 mb-4 group-hover:text-blue-600 transition-colors leading-snug">
+                <h4 className="text-[15px] font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors leading-snug">
                   {safeTitle}
                 </h4>
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-50">
                   <div className="flex flex-col gap-1">
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">마감기한</span>
                     <div className="flex items-center gap-1.5 text-sm text-slate-700 font-medium">
@@ -126,10 +126,10 @@ const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, o
                       {formattedDueDate}
                     </div>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">요청자</span>
-                    <div className="flex items-center gap-1.5 text-sm text-slate-700 font-medium">
-                      <UserIcon size={14} className="text-slate-400" />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-tight">요청자</span>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-700 font-medium">
+                      <UserIcon size={12} className="text-slate-400" />
                       {safeCustomerName}
                     </div>
                   </div>

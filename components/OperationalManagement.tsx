@@ -128,14 +128,14 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 bg-white p-3.5 sm:p-4 rounded-xl shadow-sm border border-slate-200">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-100">
-            <Layers size={24} />
+            <Layers size={21} />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-slate-800">운영정보 관리</h3>
-            <p className="text-sm text-slate-500 mt-1">프로젝트별 하드웨어, 소프트웨어, 접속 정보를 관리합니다.</p>
+            <h3 className="text-lg sm:text-xl font-bold text-slate-800">운영정보 관리</h3>
+            <p className="text-[11px] sm:text-sm text-slate-500 mt-0.5 sm:mt-1">프로젝트별 하드웨어, 소프트웨어, 접속 정보를 관리합니다.</p>
           </div>
         </div>
 
@@ -151,11 +151,14 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
       </div>
 
       <div className="grid grid-cols-1 gap-6">
+        {/* Hardware Section */}
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="px-5 py-3 border-b border-slate-100">
             <SectionHeader title="하드웨어 (Hardware)" icon={Server} type="hardware" colorClass="bg-blue-50 text-blue-600" />
           </div>
-          <div className="overflow-x-auto">
+
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left table-fixed">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider">
@@ -192,13 +195,58 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card View */}
+          <div className="sm:hidden divide-y divide-slate-100">
+            {currentOpsInfo.hardware.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 font-bold text-sm">데이터가 없습니다.</div>
+            ) : (
+              currentOpsInfo.hardware.map(item => (
+                <div key={item.id} className="p-3.5 space-y-2.5">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[9px] font-bold text-blue-600 bg-blue-50/50 px-1.5 py-0.5 rounded mb-1 inline-block">{item.usage || '용도 미지정'}</span>
+                      <h5 className="text-sm font-bold text-slate-800">{item.manufacturer} {item.model}</h5>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button onClick={() => { setEditingItem({ type: 'hardware', data: item }); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-lg"><Edit2 size={14} /></button>
+                      <button onClick={() => handleDelete('hardware', item)} className="p-1.5 text-slate-400 hover:text-red-600 bg-slate-50 rounded-lg"><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+                    <div className="bg-slate-50/50 p-1.5 rounded-lg border border-slate-100/50">
+                      <p className="text-slate-400 font-bold mb-0.5 uppercase tracking-tighter text-[9px]">CPU</p>
+                      <p className="text-slate-700 font-medium truncate">{item.cpu || '-'}</p>
+                    </div>
+                    <div className="bg-slate-50/50 p-1.5 rounded-lg border border-slate-100/50">
+                      <p className="text-slate-400 font-bold mb-0.5 uppercase tracking-tighter text-[9px]">MEM</p>
+                      <p className="text-slate-700 font-medium truncate">{item.memory || '-'}</p>
+                    </div>
+                    <div className="bg-slate-50/50 p-1.5 rounded-lg border border-slate-100/50">
+                      <p className="text-slate-400 font-bold mb-0.5 uppercase tracking-tighter text-[9px]">HDD</p>
+                      <p className="text-slate-700 font-medium truncate">{item.hdd || '-'}</p>
+                    </div>
+                  </div>
+                  {item.remarks && (
+                    <div className="text-[11px] text-slate-500 bg-slate-50/30 p-2 rounded-lg border border-slate-100/50">
+                      <p className="font-bold text-slate-400 mb-0.5 text-[9px]">비고</p>
+                      <p className="leading-tight">{item.remarks}</p>
+                    </div>
+                  )}
+                </div>
+              )
+              ))}
+          </div>
         </section>
 
+        {/* Software Section */}
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="px-5 py-3 border-b border-slate-100">
             <SectionHeader title="소프트웨어 (Software)" icon={Package} type="software" colorClass="bg-emerald-50 text-emerald-600" />
           </div>
-          <div className="overflow-x-auto">
+
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left table-fixed">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider">
@@ -233,13 +281,54 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card View */}
+          <div className="sm:hidden divide-y divide-slate-100">
+            {currentOpsInfo.software.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 font-bold text-sm">데이터가 없습니다.</div>
+            ) : (
+              currentOpsInfo.software.map(item => (
+                <div key={item.id} className="p-3.5 space-y-2.5">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50/50 px-1.5 py-0.5 rounded mb-1 inline-block">{item.usage || '용도 미지정'}</span>
+                      <h5 className="text-sm font-bold text-slate-800">{item.productVersion}</h5>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button onClick={() => { setEditingItem({ type: 'software', data: item }); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-lg"><Edit2 size={14} /></button>
+                      <button onClick={() => handleDelete('software', item)} className="p-1.5 text-slate-400 hover:text-red-600 bg-slate-50 rounded-lg"><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5 text-[11px]">
+                    <div className="flex items-center gap-2">
+                      <span className="shrink-0 w-14 text-slate-400 font-bold uppercase tracking-tighter text-[9px]">설치경로</span>
+                      <span className="text-slate-600 truncate">{item.installPath || '-'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="shrink-0 w-14 text-slate-400 font-bold uppercase tracking-tighter text-[9px]">기술지원</span>
+                      <span className="text-slate-600 truncate">{item.techSupport || '-'}</span>
+                    </div>
+                  </div>
+                  {item.remarks && (
+                    <div className="text-[11px] text-slate-500 bg-slate-50/30 p-2 rounded-lg border border-slate-100/50">
+                      <p className="font-bold text-slate-400 mb-0.5 text-[9px]">비고</p>
+                      <p className="leading-tight">{item.remarks}</p>
+                    </div>
+                  )}
+                </div>
+              )
+              ))}
+          </div>
         </section>
 
+        {/* Access Info Section */}
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="px-5 py-3 border-b border-slate-100">
             <SectionHeader title="접속정보 (Access Info)" icon={ShieldCheck} type="access" colorClass="bg-amber-50 text-amber-600" />
           </div>
-          <div className="overflow-x-auto">
+
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left table-fixed">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider">
@@ -263,8 +352,25 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card View */}
+          <div className="sm:hidden divide-y divide-slate-100">
+            {currentOpsInfo.access.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 font-bold text-sm">데이터가 없습니다.</div>
+            ) : (
+              currentOpsInfo.access.map(item => (
+                <MobileAccessCard
+                  key={item.id}
+                  item={item}
+                  onEdit={() => { setEditingItem({ type: 'access', data: item }); setIsModalOpen(true); }}
+                  onDelete={() => handleDelete('access', item)}
+                />
+              )
+              ))}
+          </div>
         </section>
 
+        {/* Other Notes Section */}
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
           <SectionHeader title="기타 참고사항 (Other Notes)" icon={FileText} type="other" colorClass="bg-rose-50 text-rose-600" />
           <textarea
@@ -356,6 +462,49 @@ const AccessRow: React.FC<{ item: AccessInfo, onEdit: () => void, onDelete: () =
         </div>
       </td>
     </tr>
+  );
+};
+
+const MobileAccessCard: React.FC<{ item: AccessInfo, onEdit: () => void, onDelete: () => void }> = ({ item, onEdit, onDelete }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  return (
+    <div className="p-3.5 space-y-2.5">
+      <div className="flex justify-between items-start">
+        <div>
+          <span className="text-[9px] font-bold text-amber-600 bg-amber-50/50 px-1.5 py-0.5 rounded mb-1 inline-block">{item.usage || '용도 미지정'}</span>
+          <h5 className="text-sm font-bold text-slate-800">{item.targetName}</h5>
+        </div>
+        <div className="flex gap-1.5">
+          <button onClick={onEdit} className="p-1.5 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-lg"><Edit2 size={14} /></button>
+          <button onClick={onDelete} className="p-1.5 text-slate-400 hover:text-red-600 bg-slate-50 rounded-lg"><Trash2 size={14} /></button>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 text-[11px]">
+        <div className="bg-slate-50/50 p-1.5 rounded-lg border border-slate-100/50">
+          <p className="text-slate-400 font-bold mb-0.5 uppercase tracking-tighter text-[9px]">로그인 아이디</p>
+          <p className="text-slate-700 font-medium truncate">{item.loginId || '-'}</p>
+        </div>
+        <div className="bg-slate-50/50 p-1.5 rounded-lg border border-slate-100/50">
+          <p className="text-slate-400 font-bold mb-0.5 uppercase tracking-tighter text-[9px]">비밀번호</p>
+          <div className="flex items-center gap-1.5 overflow-hidden">
+            <span className="text-slate-700 font-medium truncate">{showPassword ? item.password : '••••••••'}</span>
+            <button onClick={() => setShowPassword(!showPassword)} className="shrink-0 text-slate-400 hover:text-blue-600">
+              {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="bg-slate-50/50 p-1.5 rounded-lg text-[11px] border border-slate-100/50">
+        <p className="text-slate-400 font-bold mb-0.5 uppercase tracking-tighter text-[9px]">접속 경로 (URL)</p>
+        <p className="text-blue-600 font-medium truncate">{item.accessUrl || '-'}</p>
+      </div>
+      {item.remarks && (
+        <div className="text-[11px] text-slate-500 bg-slate-50/30 p-2 rounded-lg border border-slate-100/50">
+          <p className="font-bold text-slate-400 mb-0.5 text-[9px]">비고</p>
+          <p className="leading-tight">{item.remarks}</p>
+        </div>
+      )}
+    </div>
   );
 };
 

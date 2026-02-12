@@ -202,26 +202,26 @@ const TicketDetail: React.FC<Props> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Main Column */}
       <div className="lg:col-span-8 space-y-4 sm:space-y-6">
-        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
-          <div className="p-4 sm:p-6 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start gap-6">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+          <div className="p-3.5 sm:p-6 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-6">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 <span className="text-xs font-mono font-black text-blue-600 bg-blue-100/50 px-2.5 py-1 rounded-lg shrink-0">{ticket.id}</span>
                 <StatusBadge status={ticket.status} />
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 break-words leading-tight">{ticket.title}</h1>
+              <h1 className="text-[22px] sm:text-3xl font-black text-slate-900 break-words leading-tight">{ticket.title}</h1>
             </div>
             <div className="relative bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center sm:items-end shrink-0 w-full sm:w-auto">
               {ticket.status !== TicketStatus.COMPLETED && (
-                <div className={`absolute -top-3 -left-3 w-12 h-12 rounded-full ${dDayColor} flex items-center justify-center shadow-lg border-2 border-white z-10`}>
-                  <span className="text-[10px] font-black">{dDayText}</span>
+                <div className={`absolute -top-2.5 -left-2.5 w-10 h-10 rounded-full ${dDayColor} flex items-center justify-center shadow-lg border-2 border-white z-10 sm:-top-3 sm:-left-3 sm:w-12 sm:h-12`}>
+                  <span className="text-[9px] font-black">{dDayText}</span>
                 </div>
               )}
               <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] mb-1">Due Date</p>
-              <p className={`text-xl font-black ${isDelayed ? 'text-rose-600' : 'text-slate-700'}`}>
+              <p className={`text-lg sm:text-xl font-black ${isDelayed ? 'text-rose-600' : 'text-slate-700'}`}>
                 {formatDate(ticket.dueDate).split(' ')[0]}
               </p>
               {currentUser.role === UserRole.ADMIN && (
@@ -321,7 +321,7 @@ const TicketDetail: React.FC<Props> = ({
           </div>
 
           {/* Decision Log Section */}
-          <div className="px-4 sm:px-6 pb-4">
+          <div className="px-3.5 sm:px-6 pb-3.5">
             <DecisionLog history={history} />
           </div>
 

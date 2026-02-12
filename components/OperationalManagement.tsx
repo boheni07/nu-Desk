@@ -11,10 +11,12 @@ import {
   ShieldCheck,
   X,
   Eye,
-  EyeOff
+  EyeOff,
+  AlertTriangle
 } from 'lucide-react';
 import { Project, OperationalInfo, AccessInfo } from '../types';
 import { HardwareForm, SoftwareForm, AccessForm } from './operational/OperationalForms';
+import Modal from './common/Modal';
 
 interface Props {
   projects: Project[];
@@ -26,6 +28,7 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projects[0]?.id || '');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<{ type: 'hardware' | 'software' | 'access', data: any } | null>(null);
+  const [deleteInfo, setDeleteInfo] = useState<{ type: 'hardware' | 'software' | 'access', id: string } | null>(null);
 
   // 프로젝트 데이터가 로드되거나 변경될 때 selectedProjectId 동기화
   React.useEffect(() => {
@@ -70,13 +73,19 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
   };
 
   const handleDelete = (type: 'hardware' | 'software' | 'access', id: string) => {
-    if (window.confirm('정말 삭제하시겠습니까?')) {
+    setDeleteInfo({ type, id });
+  };
+
+  const confirmDelete = () => {
+    if (deleteInfo) {
+      const { type, id } = deleteInfo;
       const newOpsInfo = { ...currentOpsInfo };
       const updatedList = (newOpsInfo[type] as any[]).filter(item => item.id !== id);
       onUpdate({
         ...newOpsInfo,
         [type]: updatedList
       });
+      setDeleteInfo(null);
     }
   };
 
@@ -277,6 +286,30 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
             </div>
           </div>
         </div>
+      )}
+
+      {deleteInfo && (
+        <Modal
+          title="정보 삭제"
+          onClose={() => setDeleteInfo(null)}
+          onConfirm={confirmDelete}
+          confirmText="삭제하기"
+          confirmColor="bg-rose-600"
+        >
+          <div className="space-y-6">
+            <div className="p-6 bg-rose-50 rounded-2xl border border-rose-100 flex gap-4 items-start">
+              <AlertTriangle className="text-rose-500 shrink-0" size={24} />
+              <div>
+                <p className="text-sm font-black text-rose-800 uppercase tracking-widest mb-1">주의 사항</p>
+                <p className="text-xs text-rose-600 font-medium leading-relaxed">
+                  선택한 {deleteInfo.type === 'hardware' ? '하드웨어' : deleteInfo.type === 'software' ? '소프트웨어' : '접속'} 정보를 정말 삭제하시겠습니까? <br />
+                  삭제 시 데이터가 영구적으로 제거되며 복구할 수 없습니다.
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-slate-600 font-medium text-center">정말로 삭제하시려면 아래 '삭제하기' 버튼을 눌러주세요.</p>
+          </div>
+        </Modal>
       )}
     </div>
   );

@@ -317,11 +317,25 @@ const TicketDetail: React.FC<Props> = ({
 
           <div className="p-4 bg-slate-900 border-t border-slate-800">
             {currentUser.role === UserRole.CUSTOMER && ticket.status === TicketStatus.POSTPONE_REQUESTED && (
-              <div className="mb-6 animate-in slide-in-from-top-4 duration-500">
-                <div className="bg-orange-500/10 border border-orange-500/30 rounded-[2rem] p-6 sm:p-8">
-                  <div className="flex items-center gap-3 mb-6"><div className="p-2 bg-orange-500 rounded-xl text-white"><CalendarDays size={20} /></div><h4 className="text-lg font-black text-orange-400">마감 기한 연기 요청 상세</h4></div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6"><div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 text-center"><p className="text-[10px] text-slate-500 font-black uppercase mb-1">당초 기한</p><p className="text-sm font-bold text-slate-300 line-through">{formatDate(ticket.dueDate).split(' ')[0]}</p></div><div className="bg-orange-500/20 p-4 rounded-2xl border border-orange-500/30 text-center"><p className="text-[10px] text-orange-400 font-black uppercase mb-1">연기 요청일</p><p className="text-lg font-black text-white">{ticket.postponeDate ? formatDate(ticket.postponeDate).split(' ')[0] : '미지정'}</p></div></div>
-                  <div className="bg-slate-900/50 p-5 rounded-2xl border border-slate-800 italic text-sm text-slate-300">"{ticket.postponeReason}"</div>
+              <div className="mb-3 animate-in slide-in-from-top-4 duration-500">
+                <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-3 sm:p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CalendarDays size={16} className="text-orange-500" />
+                    <h4 className="text-sm font-black text-orange-400">마감 기한 연기 요청 상세</h4>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div className="bg-slate-900/40 p-2 rounded-xl border border-slate-800/50 flex items-center justify-center gap-2">
+                      <span className="text-[10px] text-slate-500 font-black uppercase whitespace-nowrap">당초 기한 :</span>
+                      <span className="text-xs font-bold text-slate-400 line-through leading-tight">{formatDate(ticket.dueDate).split(' ')[0]}</span>
+                    </div>
+                    <div className="bg-orange-500/10 p-2 rounded-xl border border-orange-500/20 flex items-center justify-center gap-2">
+                      <span className="text-[10px] text-orange-400/80 font-black uppercase whitespace-nowrap">연기 요청일 :</span>
+                      <span className="text-sm font-black text-white leading-tight">{ticket.postponeDate ? formatDate(ticket.postponeDate).split(' ')[0] : '미지정'}</span>
+                    </div>
+                  </div>
+                  <div className="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/50 italic text-[13px] text-slate-300 leading-snug">
+                    "{ticket.postponeReason}"
+                  </div>
                 </div>
               </div>
             )}

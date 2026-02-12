@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Project, User, Ticket, UserRole, IntakeMethod } from '../types';
 import { addBusinessDays } from '../utils';
-import { Paperclip, Calendar, X, Check, Phone, HelpCircle, FileText, Loader2 } from 'lucide-react';
+import { Paperclip, Calendar, X, Check, Phone, HelpCircle, FileText, Loader2, PlusCircle } from 'lucide-react';
 import { format, isBefore, startOfDay } from 'date-fns';
 import { useToast } from '../contexts/ToastContext';
 
@@ -43,10 +43,7 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
 
   // 지원팀 전용 추가 필드
   const [plan, setPlan] = useState(initialData?.plan || '');
-  const [expectedDate, setExpectedDate] = useState(
-    initialData?.expectedCompletionDate ? format(new Date(initialData.expectedCompletionDate), 'yyyy-MM-dd') : format(defaultDueDate, 'yyyy-MM-dd')
-  );
-
+  const [planFiles, setPlanFiles] = useState<File[]>([]);
   const [intakeMethod, setIntakeMethod] = useState<IntakeMethod>(initialData?.intakeMethod || IntakeMethod.PHONE);
   const [requestDate, setRequestDate] = useState(
     initialData?.requestDate ? format(new Date(initialData.requestDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
@@ -65,15 +62,23 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
     }
   }, [dueDate, normalizedDefault]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, isPlan: boolean = false) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      setFiles(prev => [...prev, ...newFiles]);
+      if (isPlan) {
+        setPlanFiles(prev => [...prev, ...newFiles]);
+      } else {
+        setFiles(prev => [...prev, ...newFiles]);
+      }
     }
   };
 
-  const removeFile = (index: number) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
+  const removeFile = (index: number, isPlan: boolean = false) => {
+    if (isPlan) {
+      setPlanFiles(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setFiles(prev => prev.filter((_, i) => i !== index));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -99,8 +104,8 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
         initialDueDate: new Date(dueDate).toISOString(),
         shortenedDueReason: isShortened ? dueReason : undefined,
         attachments: files.length > 0 ? files.map(f => f.name) : initialData?.attachments,
-        plan: isSupport && plan ? plan : initialData?.plan,
-        expectedCompletionDate: isSupport && plan && expectedDate ? new Date(expectedDate).toISOString() : initialData?.expectedCompletionDate,
+        plan: (isSupport || isAdmin) && plan ? plan : initialData?.plan,
+        planAttachments: planFiles.length > 0 ? planFiles.map(f => f.name) : initialData?.planAttachments,
       };
 
       if (isSupport || isAdmin) {
@@ -120,10 +125,11 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-5 sm:p-8 lg:p-10 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-5 sm:p-8 lg:p-10 max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
       <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
+        <div className="grid grid-cols-1 gap-6 sm:gap-8">
+          {/* Top Row: Project and Title */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-end">
             <div className="space-y-2">
               <label className="block text-sm font-bold text-slate-700 ml-1">프로젝트 선택 *</label>
               <select
@@ -148,12 +154,67 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
                 required
               />
             </div>
+          </div>
 
+          {/* Support Fields Row */}
+          {(isSupport || isAdmin) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6 bg-slate-50/50 rounded-2xl border border-slate-100">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">요청 방법 *</label>
+                <div className="flex gap-2">
+                  {[
+                    { val: IntakeMethod.EMAIL, label: '메일' },
+                    { val: IntakeMethod.PHONE, label: '전화' },
+                    { val: IntakeMethod.OTHER, label: '기타' }
+                  ].map(({ val, label }) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setIntakeMethod(val)}
+                      className={`flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all ${intakeMethod === val
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-md'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'
+                        }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">요청일 *</label>
+                <input
+                  type="date"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl outline-none bg-white text-sm font-medium focus:border-blue-500 transition-all"
+                  value={requestDate}
+                  onChange={(e) => setRequestDate(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2 lg:col-span-1 md:col-span-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">처리기한 *</label>
+                <input
+                  type="date"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl outline-none bg-white text-sm font-medium focus:border-blue-500 transition-all"
+                  value={dueDate}
+                  min={format(new Date(), 'yyyy-MM-dd')}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Main 2-Column Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left: Request Content */}
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-slate-700 ml-1">요청 상세 *</label>
+              <label className="block text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
+                요청내용 & 파일첨부 *
+              </label>
               <div className="relative border border-slate-200 rounded-2xl overflow-hidden focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500 transition-all bg-slate-50">
                 <textarea
-                  rows={8}
+                  rows={12}
                   placeholder="요청 내용을 상세히 기재해주세요."
                   className="w-full px-5 py-4 bg-transparent outline-none resize-none text-sm leading-relaxed"
                   value={description}
@@ -163,12 +224,12 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
                 <div className="p-4 bg-white/50 border-t border-slate-200/50">
                   <div className="flex justify-between items-center mb-4">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                      <FileText size={14} /> 첨부 파일 (문서, PR, 엑셀, 그림)
+                      <Paperclip size={14} /> 첨부된 파일
                     </p>
                     <label className="px-4 py-2 bg-white hover:bg-slate-50 rounded-xl cursor-pointer transition-colors border border-slate-200 shadow-sm flex items-center gap-2 text-xs font-bold text-slate-600">
-                      <Paperclip size={14} />
-                      <span>파일 선택</span>
-                      <input type="file" multiple accept={ALLOWED_EXTENSIONS} className="hidden" onChange={handleFileChange} />
+                      <PlusCircle size={14} />
+                      <span>파일 추가</span>
+                      <input type="file" multiple accept={ALLOWED_EXTENSIONS} className="hidden" onChange={(e) => handleFileChange(e, false)} />
                     </label>
                   </div>
                   {files.length > 0 && (
@@ -176,7 +237,7 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
                       {files.map((f, i) => (
                         <span key={i} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 text-[11px] font-bold rounded-xl border border-blue-100 shadow-sm">
                           <span className="max-w-[150px] truncate">{f.name}</span>
-                          <X size={14} className="cursor-pointer hover:text-red-500" onClick={() => removeFile(i)} />
+                          <X size={14} className="cursor-pointer hover:text-red-500" onClick={() => removeFile(i, false)} />
                         </span>
                       ))}
                     </div>
@@ -184,66 +245,91 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="space-y-6 lg:space-y-8">
-            {isSupport && (
-              <div className="bg-indigo-50/50 p-6 sm:p-8 rounded-3xl border border-indigo-100 shadow-sm">
-                <h3 className="text-sm font-bold text-indigo-800 mb-6 flex items-center gap-2.5">
-                  <div className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600"><Phone size={16} /></div> 지원 정보
-                </h3>
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-[10px] font-black text-indigo-400 mb-2.5 uppercase tracking-widest">일괄 처리계획 등록 (선택)</label>
+            {/* Right: Action Plan (Only for Support/Admin) */}
+            <div className="space-y-2">
+              {(isSupport || isAdmin) ? (
+                <>
+                  <label className="block text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
+                    처리계획 & 파일첨부 (선택사항)
+                  </label>
+                  <div className="relative border border-indigo-100 rounded-2xl overflow-hidden focus-within:ring-4 focus-within:ring-indigo-500/10 focus-within:border-indigo-500 transition-all bg-indigo-50/30">
                     <textarea
-                      placeholder="등록과 동시에 처리 계획을 입력하면 즉시 '처리중' 상태가 됩니다."
-                      className="w-full px-4 py-3 border border-indigo-100 rounded-xl outline-none bg-white text-xs resize-none"
-                      rows={3}
+                      rows={12}
+                      placeholder="처리 계획을 입력하면 즉시 '처리중' 상태가 됩니다. 미입력 시 '접수' 상태가 됩니다."
+                      className="w-full px-5 py-4 bg-transparent outline-none resize-none text-sm leading-relaxed"
                       value={plan}
                       onChange={(e) => setPlan(e.target.value)}
                     />
-                  </div>
-                  {plan && (
-                    <div>
-                      <label className="block text-[10px] font-black text-indigo-400 mb-2.5 uppercase tracking-widest">완료 예정일 *</label>
-                      <input
-                        type="date"
-                        className="w-full px-4 py-3 border border-indigo-100 rounded-xl outline-none bg-white text-sm font-medium"
-                        value={expectedDate}
-                        onChange={(e) => setExpectedDate(e.target.value)}
-                        required
-                      />
+                    <div className="p-4 bg-white/50 border-t border-indigo-100/50">
+                      <div className="flex justify-between items-center mb-4">
+                        <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
+                          <Paperclip size={14} /> 처리계획 첨부
+                        </p>
+                        <label className="px-4 py-2 bg-white hover:bg-indigo-50 rounded-xl cursor-pointer transition-colors border border-indigo-100 shadow-sm flex items-center gap-2 text-xs font-bold text-indigo-600">
+                          <PlusCircle size={14} />
+                          <span>파일 추가</span>
+                          <input type="file" multiple accept={ALLOWED_EXTENSIONS} className="hidden" onChange={(e) => handleFileChange(e, true)} />
+                        </label>
+                      </div>
+                      {planFiles.length > 0 && (
+                        <div className="flex flex-wrap gap-2 animate-in fade-in duration-300">
+                          {planFiles.map((f, i) => (
+                            <span key={i} className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-xl border border-indigo-100 shadow-sm">
+                              <span className="max-w-[150px] truncate">{f.name}</span>
+                              <X size={14} className="cursor-pointer hover:text-red-500" onClick={() => removeFile(i, true)} />
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
+                  </div>
+                </>
+              ) : (
+                <div className="h-full flex flex-col">
+                  {!isSupport && !isAdmin && (
+                    <>
+                      <label className="block text-sm font-bold text-slate-700 ml-1">희망 처리 기한 *</label>
+                      <div className="mt-2 space-y-4">
+                        <input type="date" className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl outline-none bg-slate-50 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all" value={dueDate} min={format(new Date(), 'yyyy-MM-dd')} onChange={(e) => setDueDate(e.target.value)} required />
+                        {isShortened && (
+                          <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                            <label className="block text-[10px] font-black text-rose-500 uppercase tracking-widest ml-1">기한 단축 사유 *</label>
+                            <textarea rows={3} placeholder="표준 기한(5일)보다 짧게 설정하신 사유를 입력해주세요." className="w-full px-4 py-3 border border-rose-200 rounded-xl text-xs bg-rose-50/30 resize-none outline-none focus:border-rose-400 transition-all font-medium" value={dueReason} onChange={(e) => setDueReason(e.target.value)} required />
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-auto pt-6">
+                        <div className="p-6 rounded-3xl bg-blue-600 text-white text-[11px] flex gap-4 shadow-lg shadow-blue-200">
+                          <HelpCircle className="shrink-0 opacity-80" size={24} />
+                          <div className="font-medium">
+                            <p className="font-black mb-1.5 uppercase tracking-wider opacity-90 text-[12px]">안내사항</p>
+                            <p className="opacity-90 leading-relaxed text-sm">등록된 티켓은 지원팀 검토 후 '접수' 상태로 전환됩니다. 모든 대화 이력과 파일은 안전하게 보존됩니다.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
-              </div>
-            )}
-
-            <div className="bg-slate-50 p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
-              <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center gap-2.5">
-                <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600"><Calendar size={16} /></div> 기한 설정
-              </h3>
-              <div className="space-y-6">
-                <input type="date" className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none bg-white text-sm font-medium" value={dueDate} min={format(new Date(), 'yyyy-MM-dd')} onChange={(e) => setDueDate(e.target.value)} />
-                {isShortened && (
-                  <textarea rows={3} placeholder="기한 단축 사유를 입력하세요." className="w-full px-4 py-3 border border-rose-200 rounded-xl text-xs bg-white resize-none" value={dueReason} onChange={(e) => setDueReason(e.target.value)} />
-                )}
-              </div>
-            </div>
-
-            <div className="p-5 rounded-3xl bg-blue-600 text-white text-[11px] flex gap-4">
-              <HelpCircle className="shrink-0 opacity-80" size={20} />
-              <div className="font-medium">
-                <p className="font-black mb-1.5 uppercase tracking-wider opacity-80">안내사항</p>
-                <p className="opacity-90 leading-relaxed">등록된 티켓은 지원팀 검토 후 '접수' 상태로 전환됩니다. 모든 대화 이력과 파일은 안전하게 보존됩니다.</p>
-              </div>
+              )}
             </div>
           </div>
+
+          {/* Footer Area for Support Info in non-2-column mode or extra notes */}
+          {isSupport && isShortened && (
+            <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl">
+              <label className="block text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1.5">기한 단축 정보</label>
+              <textarea rows={2} placeholder="기한 단축 사유 (필요 시)" className="w-full px-4 py-2 bg-white border border-rose-200 rounded-xl text-xs outline-none" value={dueReason} onChange={(e) => setDueReason(e.target.value)} />
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-3 pt-8 border-t border-slate-100">
           <button type="button" onClick={onCancel} className="px-8 py-3.5 text-slate-500 font-bold hover:bg-slate-50 rounded-2xl transition-all text-sm">취소</button>
-          <button type="submit" className="px-12 py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 shadow-xl transition-all flex items-center gap-2 text-sm uppercase tracking-widest leading-none"><Check size={20} /> 티켓 등록 완료</button>
+          <button type="submit" className="px-12 py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 shadow-xl transition-all flex items-center gap-2 text-sm uppercase tracking-widest leading-none">
+            {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <Check size={20} />}
+            티켓 등록 완료
+          </button>
         </div>
       </form >
 
@@ -305,7 +391,7 @@ const TicketCreate: React.FC<Props> = ({ projects, currentUser, initialData, onS
           </div>
         </div>
       )}
-    </div >
+    </div>
   );
 };
 

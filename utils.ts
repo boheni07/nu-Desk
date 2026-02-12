@@ -64,8 +64,15 @@ export const addBusinessHours = (startDate: Date, hours: number): Date => {
   return currentDate;
 };
 
-export const formatDate = (date: string | Date): string => {
-  return format(new Date(date), 'yyyy-MM-dd HH:mm');
+export const formatDate = (date: string | Date | null | undefined): string => {
+  if (!date) return '날짜 없음';
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '유효하지 않은 날짜';
+    return format(d, 'yyyy-MM-dd HH:mm');
+  } catch (e) {
+    return '날짜 오류';
+  }
 };
 
 export const isOverdue = (dueDate: string): boolean => {

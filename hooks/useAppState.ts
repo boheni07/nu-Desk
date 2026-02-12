@@ -109,17 +109,19 @@ export const useAppState = () => {
                         savedOpsInfo,
                         savedOrgInfo
                     ] = await Promise.all([
-                        storage.fetchCompanies().catch(() => []),
-                        storage.fetchProjects().catch(() => []),
-                        storage.fetchTickets().catch(() => []),
-                        storage.fetchComments().catch(() => []),
-                        storage.fetchHistory().catch(() => []),
+                        storage.fetchCompanies().catch(err => { console.error('Fetch companies error:', err); return []; }),
+                        storage.fetchProjects().catch(err => { console.error('Fetch projects error:', err); return []; }),
+                        storage.fetchTickets().catch(err => { console.error('Fetch tickets error:', err); return []; }),
+                        storage.fetchComments().catch(err => { console.error('Fetch comments error:', err); return []; }),
+                        storage.fetchHistory().catch(err => { console.error('Fetch history error:', err); return []; }),
                         storage.fetchAllOpsInfo().catch(err => {
                             console.error('Fetch ops info error:', err);
                             return [];
                         }),
-                        storage.fetchOrganizationInfo().catch(() => undefined)
+                        storage.fetchOrganizationInfo().catch(err => { console.error('Fetch org info error:', err); return undefined; })
                     ]);
+
+                    console.log(`[App Init] Data Loaded - Companies: ${savedCompanies.length}, Projects: ${savedProjects.length}, Tickets: ${savedTickets.length}`);
 
                     setCompanies(savedCompanies);
                     setUsers(mappedUsers);

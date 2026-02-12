@@ -134,6 +134,9 @@ const App: React.FC = () => {
     if (!currentUser) return [];
     if (currentUser.role === UserRole.ADMIN) return projects;
 
+    console.log(`[Filtering] Projects for user ${currentUser.name} (${currentUser.role})`);
+
+    let result = [];
     if (currentUser.role === UserRole.SUPPORT_LEAD) {
       const teamUserIds = users
         .filter(u =>
@@ -141,21 +144,24 @@ const App: React.FC = () => {
           (currentUser.department && u.department === currentUser.department)
         )
         .map(u => u.id);
-      return projects.filter(p => p.supportStaffIds.some(id => teamUserIds.includes(id)));
+      result = projects.filter(p => (p.supportStaffIds || []).some(id => teamUserIds.includes(id)));
+    } else if (currentUser.role === UserRole.SUPPORT_STAFF) {
+      result = projects.filter(p => (p.supportStaffIds || []).includes(currentUser.id));
+    } else {
+      result = projects.filter(p => (p.customerContactIds || []).includes(currentUser.id));
     }
 
-    if (currentUser.role === UserRole.SUPPORT_STAFF) {
-      return projects.filter(p => p.supportStaffIds.includes(currentUser.id));
-    }
-
-    return projects.filter(p => p.customerContactIds.includes(currentUser.id));
+    console.log(`[Filtering] Accessible Projects: ${result.length}`);
+    return result;
   }, [projects, users, currentUser]);
 
   const filteredTickets = useMemo(() => {
     if (!currentUser) return [];
     if (currentUser.role === UserRole.ADMIN) return tickets;
     const accessibleProjectIds = filteredProjects.map(p => p.id);
-    return tickets.filter(t => accessibleProjectIds.includes(t.projectId));
+    const result = tickets.filter(t => accessibleProjectIds.includes(t.projectId));
+    console.log(`[Filtering] Tickets for user ${currentUser.name}: ${result.length} (from total ${tickets.length})`);
+    return result;
   }, [tickets, filteredProjects, currentUser]);
 
   const selectedTicket = useMemo(() =>

@@ -103,7 +103,7 @@ export const useTicketHandlers = ({
             return;
         }
         try {
-            if (!window.confirm(`티켓(${id})을 정말 삭제하시겠습니까?\n모든 히스토리와 댓글이 함께 삭제됩니다.`)) return;
+            // Native confirm removed, handled by UI modals
 
             // DB 삭제 (storage.deleteTicket에서 연관 데이터 동시 처리)
             await storage.deleteTicket(id);
@@ -119,7 +119,7 @@ export const useTicketHandlers = ({
             console.error('Ticket delete error:', err);
             showToast('티켓 삭제 중 오류가 발생했습니다.', 'error');
         }
-    }, [setTickets, setHistory, setComments, showToast, changeView]);
+    }, [setTickets, setHistory, setComments, showToast, changeView, currentUser]);
 
     const updateTicketStatus = useCallback(async (ticketId: string, newStatus: TicketStatus, updates: Partial<Ticket> = {}, note?: string, action?: string) => {
         try {

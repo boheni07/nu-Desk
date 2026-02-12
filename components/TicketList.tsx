@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Ticket, TicketStatus, User, UserRole } from '../types';
 import { formatDate } from '../utils';
-import { Clock, MessageSquare, Paperclip, ChevronRight, User as UserIcon, Calendar, Pencil, Trash2 } from 'lucide-react';
+import { Clock, MessageSquare, Paperclip, ChevronRight, User as UserIcon, Calendar, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import Modal from './common/Modal';
 
 interface Props {
   tickets: Ticket[];
@@ -26,6 +27,18 @@ const getStatusColor = (status: TicketStatus) => {
 };
 
 const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, onDelete }) => {
+  const [ticketToDelete, setTicketToDelete] = useState<string | null>(null);
+
+  const handleDeleteClick = (id: string) => {
+    setTicketToDelete(id);
+  };
+
+  const confirmDelete = () => {
+    if (ticketToDelete) {
+      onDelete(ticketToDelete);
+      setTicketToDelete(null);
+    }
+  };
   if (tickets.length === 0) {
     return (
       <div className="bg-white rounded-3xl border border-slate-200 p-20 flex flex-col items-center justify-center text-center shadow-sm">
@@ -92,7 +105,7 @@ const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, o
                         </button>
                         {currentUser.role === UserRole.ADMIN && (
                           <button
-                            onClick={() => onDelete(ticket.id)}
+                            onClick={() => handleDeleteClick(ticket.id)}
                             className="p-1.5 bg-slate-50 text-slate-500 rounded-lg hover:text-red-600"
                           >
                             <Trash2 size={14} />
@@ -169,7 +182,7 @@ const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, o
                       </button>
                       {currentUser.role === UserRole.ADMIN && (
                         <button
-                          onClick={() => onDelete(ticket.id)}
+                          onClick={() => handleDeleteClick(ticket.id)}
                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="삭제"
                         >
@@ -185,6 +198,30 @@ const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, o
           );
         })}
       </div>
+
+      {ticketToDelete && (
+        <Modal
+          title="티켓 삭제"
+          onClose={() => setTicketToDelete(null)}
+          onConfirm={confirmDelete}
+          confirmText="삭제하기"
+          confirmColor="bg-rose-600"
+        >
+          <div className="space-y-6">
+            <div className="p-6 bg-rose-50 rounded-2xl border border-rose-100 flex gap-4 items-start">
+              <AlertTriangle className="text-rose-500 shrink-0" size={24} />
+              <div>
+                <p className="text-sm font-black text-rose-800 uppercase tracking-widest mb-1">주의 사항</p>
+                <p className="text-xs text-rose-600 font-medium leading-relaxed">
+                  티켓({ticketToDelete})을 정말 삭제하시겠습니까? <br />
+                  삭제 시 모든 히스토리와 댓글이 함께 영구 삭제되며 복구할 수 없습니다.
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-slate-600 font-medium text-center">정말로 삭제하시려면 아래 '삭제하기' 버튼을 눌러주세요.</p>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

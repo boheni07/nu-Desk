@@ -68,6 +68,7 @@ const TicketDetail: React.FC<Props> = ({
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [showRejectCompleteModal, setShowRejectCompleteModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [postponeDate, setPostponeDate] = useState('');
   const [postponeReason, setPostponeReason] = useState('');
@@ -216,7 +217,7 @@ const TicketDetail: React.FC<Props> = ({
               </p>
               {currentUser.role === UserRole.ADMIN && (
                 <button
-                  onClick={() => onDelete(ticket.id)}
+                  onClick={() => setShowDeleteModal(true)}
                   className="mt-4 flex items-center gap-2 text-rose-500 hover:text-rose-600 font-bold text-xs px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-100 transition-all w-full justify-center"
                 >
                   <Trash2 size={14} /> 티켓 전체 삭제
@@ -511,6 +512,34 @@ const TicketDetail: React.FC<Props> = ({
         showCompleteModal && (
           <Modal title="완료 보고 요청" onClose={() => setShowCompleteModal(false)} onConfirm={handleCompleteRequest} confirmText="완료 보고 전송" confirmColor="bg-emerald-600">
             <div className="text-center space-y-6 py-4"><div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto"><CheckCircle2 size={44} /></div><p className="text-sm font-bold text-slate-600 leading-relaxed max-w-xs mx-auto">요청하신 모든 지원 작업이 완료되었음을 고객에게 보고하고 최종 승인을 요청합니다.</p></div>
+          </Modal>
+        )
+      }
+      {
+        showDeleteModal && (
+          <Modal
+            title="티켓 삭제"
+            onClose={() => setShowDeleteModal(false)}
+            onConfirm={() => {
+              onDelete(ticket.id);
+              setShowDeleteModal(false);
+            }}
+            confirmText="삭제하기"
+            confirmColor="bg-rose-600"
+          >
+            <div className="space-y-6">
+              <div className="p-6 bg-rose-50 rounded-2xl border border-rose-100 flex gap-4 items-start">
+                <AlertTriangle className="text-rose-500 shrink-0" size={24} />
+                <div>
+                  <p className="text-sm font-black text-rose-800 uppercase tracking-widest mb-1">주의 사항</p>
+                  <p className="text-xs text-rose-600 font-medium leading-relaxed">
+                    티켓({ticket.id})을 정말 삭제하시겠습니까? <br />
+                    삭제 시 모든 히스토리와 댓글이 함께 영구 삭제되며 복구할 수 없습니다.
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 font-medium text-center">정말로 삭제하시려면 아래 '삭제하기' 버튼을 눌러주세요.</p>
+            </div>
           </Modal>
         )
       }

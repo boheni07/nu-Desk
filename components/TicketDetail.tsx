@@ -311,7 +311,7 @@ const TicketDetail: React.FC<Props> = ({
           </div>
 
           {/* Decision Log Section */}
-          <div className="px-4 sm:px-6 pb-6">
+          <div className="px-4 sm:px-6 pb-4">
             <DecisionLog history={history} />
           </div>
 

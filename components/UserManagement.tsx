@@ -184,111 +184,79 @@ const UserManagement: React.FC<Props> = ({ users, companies, projects, tickets, 
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left table-fixed">
           <thead>
-            <tr className="bg-slate-50/50 border-b border-slate-200 text-slate-500 text-sm">
-              <th className="px-4 py-4 font-semibold w-[10%]">ID</th>
-              <th className="px-4 py-4 font-semibold w-[15%]">성명</th>
-              <th className="px-4 py-4 font-semibold w-[12%]">역할 (권한)</th>
-              <th className="px-4 py-4 font-semibold w-[10%]">상태</th>
-              <th className="px-4 py-4 font-semibold w-[18%]">연락처</th>
-              <th className="px-4 py-4 font-semibold w-[25%]">소속 정보</th>
-              <th className="px-4 py-4 font-semibold w-[10%] text-right">관리</th>
+            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider">
+              <th className="px-5 py-4 font-bold w-[15%]">성명</th>
+              <th className="px-5 py-4 font-bold w-[12%]">ID</th>
+              <th className="px-5 py-4 font-bold w-[13%]">종류</th>
+              <th className="px-5 py-4 font-bold w-[10%]">상태</th>
+              <th className="px-5 py-4 font-bold w-[15%]">휴대폰</th>
+              <th className="px-5 py-4 font-bold w-[25%]">소속</th>
+              <th className="px-5 py-4 font-bold w-[10%] text-right pr-6">관리</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-20 text-center text-slate-400">
-                  <div className="flex flex-col items-center gap-3">
-                    <UserIcon size={40} className="text-slate-200" />
-                    <p>등록된 회원이 없거나 검색 결과가 없습니다.</p>
-                  </div>
+                <td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic">
+                  등록된 회원이 없거나 검색 결과가 없습니다.
                 </td>
               </tr>
             ) : (
               filteredUsers.map(user => {
                 const isActive = user.status === UserStatus.ACTIVE;
                 return (
-                  <tr key={user.id} className={`hover:bg-slate-50/80 transition-colors group ${!isActive ? 'opacity-70 bg-slate-50/50' : ''}`}>
-                    <td className="px-4 py-4">
-                      <span className="font-mono text-slate-600 text-sm font-bold">{user.loginId}</span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${isActive ? 'bg-white border border-slate-200 text-slate-700' : 'bg-slate-100 text-slate-400'}`}>
+                  <tr key={user.id} className={`hover:bg-slate-50 transition-colors group text-sm ${!isActive ? 'opacity-60 grayscale-[0.5]' : ''}`}>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${isActive ? 'bg-indigo-50 text-indigo-500' : 'bg-slate-200 text-slate-400'}`}>
                           {user.name.charAt(0)}
                         </div>
-                        <div className={`font-bold text-base ${isActive ? 'text-slate-800' : 'text-slate-500'}`}>{user.name}</div>
+                        <span className={`font-bold truncate ${isActive ? 'text-slate-700' : 'text-slate-400'}`}>{user.name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${getRoleBadge(user.role)}`}>
+                    <td className="px-5 py-4 font-mono text-slate-500 text-xs truncate">{user.loginId}</td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold border items-center gap-1 truncate ${getRoleBadge(user.role)}`}>
                         {user.role === UserRole.ADMIN && <Shield size={10} />}
                         {user.role === UserRole.ADMIN ? '관리자' :
                           user.role === UserRole.SUPPORT_LEAD ? '지원팀장' :
                             user.role === UserRole.SUPPORT_STAFF ? '지원담당' : '고객담당'}
                       </span>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${isActive
-                        ? 'bg-green-50 text-green-700 border-green-200'
-                        : 'bg-slate-100 text-slate-500 border-slate-200'
-                        }`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`} />
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${isActive ? 'bg-green-100 text-green-700 border-green-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
                         {user.status}
-                      </div>
+                      </span>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center gap-1.5 text-sm text-slate-600">
-                          <Phone size={14} className="text-slate-400 shrink-0" />
-                          <span className={user.phone ? '' : 'text-slate-300'}>{user.phone || '-'}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-sm text-slate-600">
-                          <Smartphone size={14} className="text-slate-400 shrink-0" />
-                          <span className={user.mobile ? '' : 'text-slate-300'}>{user.mobile || '-'}</span>
-                        </div>
-                      </div>
+                    <td className="px-5 py-4 text-slate-600 truncate">{user.mobile || '-'}</td>
+                    <td className="px-5 py-4 text-slate-600 truncate">
+                      {user.role === UserRole.CUSTOMER
+                        ? companies.find(c => c.id === user.companyId)?.name || 'N/A'
+                        : user.department || <span className="text-slate-300 italic">본사 (nu)</span>}
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-1.5 text-sm text-slate-600">
-                        {user.role === UserRole.CUSTOMER ? (
-                          <>
-                            <Building size={14} className="text-slate-400" />
-                            <span className="font-medium text-slate-700">
-                              {companies.find(c => c.id === user.companyId)?.name || <span className="text-slate-400 italic">미지정</span>}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <Shield size={14} className="text-slate-400" />
-                            <span className="font-medium text-slate-700">
-                              {user.department || '본사 (nu)'}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleOpenEditModal(user)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="수정">
+                    <td className="px-5 py-4 text-right pr-6">
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => handleOpenEditModal(user)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="수정">
                           <Edit2 size={16} />
                         </button>
-                        <button
-                          onClick={() => {
-                            if (user.loginId === 'admin1') {
-                              showToast('시스템 관리자 계정(admin1)은 삭제할 수 없습니다.', 'error');
-                              return;
-                            }
-                            handleOpenDeleteModal(user);
-                          }}
-                          className={`p-2 rounded-lg transition-colors ${user.loginId === 'admin1' ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
-                          title={user.loginId === 'admin1' ? "삭제 불가" : "삭제"}
-                          disabled={user.loginId === 'admin1'}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {currentUser.role === UserRole.ADMIN && (
+                          <button
+                            onClick={() => {
+                              if (user.loginId === 'admin1') {
+                                showToast('시스템 관리자 계정(admin1)은 삭제할 수 없습니다.', 'error');
+                                return;
+                              }
+                              handleOpenDeleteModal(user);
+                            }}
+                            className={`p-1.5 rounded-md transition-colors ${user.loginId === 'admin1' ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
+                            title={user.loginId === 'admin1' ? '삭제 불가' : '삭제'}
+                            disabled={user.loginId === 'admin1'}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -555,18 +523,20 @@ const UserManagement: React.FC<Props> = ({ users, companies, projects, tickets, 
           </div>
         </div>
       )}
-      {isDeleteModalOpen && deletingUser && (
-        <DeleteConfirmModal
-          isOpen={isDeleteModalOpen}
-          onClose={() => setIsDeleteModalOpen(false)}
-          onConfirm={confirmDelete}
-          title="사용자 삭제 확인"
-          targetName={deletingUser.name}
-          relatedData={getRelatedData(deletingUser)}
-          description="사용자 삭제 시 해당 사용자가 작성한 내역의 실명이 대체되거나 이력이 상실될 수 있습니다."
-        />
-      )}
-    </div>
+      {
+        isDeleteModalOpen && deletingUser && (
+          <DeleteConfirmModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={confirmDelete}
+            title="사용자 삭제 확인"
+            targetName={deletingUser.name}
+            relatedData={getRelatedData(deletingUser)}
+            description="사용자 삭제 시 해당 사용자가 작성한 내역의 실명이 대체되거나 이력이 상실될 수 있습니다."
+          />
+        )
+      }
+    </div >
   );
 };
 

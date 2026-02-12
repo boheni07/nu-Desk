@@ -18,7 +18,8 @@ import {
   CheckCircle,
   Mail,
   Phone,
-  User as UserIcon
+  User as UserIcon,
+  Trash2
 } from 'lucide-react';
 import Modal from './common/Modal';
 import StatusBadge from './common/StatusBadge';
@@ -36,6 +37,7 @@ interface Props {
   currentUser: User;
   onStatusUpdate: (ticketId: string, status: TicketStatus, updates?: Partial<Ticket>, note?: string, action?: string) => void;
   onAddComment: (comment: Omit<Comment, 'id' | 'timestamp'>) => void;
+  onDelete: (id: string) => void;
   onBack: () => void;
 }
 
@@ -50,6 +52,7 @@ const TicketDetail: React.FC<Props> = ({
   currentUser,
   onStatusUpdate,
   onAddComment,
+  onDelete,
   onBack
 }) => {
   const { showToast } = useToast();
@@ -191,9 +194,9 @@ const TicketDetail: React.FC<Props> = ({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Main Column */}
-      <div className="lg:col-span-8 space-y-6 sm:space-y-8">
+      <div className="lg:col-span-8 space-y-4 sm:space-y-6">
         <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
-          <div className="p-6 sm:p-10 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start gap-6">
+          <div className="p-4 sm:p-6 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start gap-6">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 <span className="text-xs font-mono font-black text-blue-600 bg-blue-100/50 px-2.5 py-1 rounded-lg shrink-0">{ticket.id}</span>
@@ -211,11 +214,19 @@ const TicketDetail: React.FC<Props> = ({
               <p className={`text-xl font-black ${isDelayed ? 'text-rose-600' : 'text-slate-700'}`}>
                 {formatDate(ticket.dueDate).split(' ')[0]}
               </p>
+              {currentUser.role === UserRole.ADMIN && (
+                <button
+                  onClick={() => onDelete(ticket.id)}
+                  className="mt-4 flex items-center gap-2 text-rose-500 hover:text-rose-600 font-bold text-xs px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-100 transition-all w-full justify-center"
+                >
+                  <Trash2 size={14} /> 티켓 전체 삭제
+                </button>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 items-stretch">
-            <div className="p-6 sm:p-10 flex flex-col h-full">
+            <div className="p-4 sm:p-6 flex flex-col h-full">
               <section className="flex-1 flex flex-col h-full">
                 <h3 className="text-sm font-black text-slate-800 mb-4 flex items-center gap-2.5 uppercase tracking-wider shrink-0">
                   <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600"><FileText size={16} /></div> 요청 내용
@@ -244,7 +255,7 @@ const TicketDetail: React.FC<Props> = ({
               </section>
             </div>
 
-            <div className="p-6 sm:p-10 bg-slate-50/30 flex flex-col h-full">
+            <div className="p-4 sm:p-6 bg-slate-50/30 flex flex-col h-full">
               <h3 className="text-sm font-black text-slate-800 mb-4 flex items-center gap-2.5 uppercase tracking-wider shrink-0">
                 <div className="p-1.5 bg-emerald-100 rounded-lg text-emerald-600"><CheckCircle2 size={16} /></div> 처리 계획
               </h3>
@@ -300,11 +311,11 @@ const TicketDetail: React.FC<Props> = ({
           </div>
 
           {/* Decision Log Section */}
-          <div className="px-6 sm:px-10 pb-8">
+          <div className="px-4 sm:px-6 pb-6">
             <DecisionLog history={history} />
           </div>
 
-          <div className="p-6 bg-slate-900 border-t border-slate-800">
+          <div className="p-4 bg-slate-900 border-t border-slate-800">
             {currentUser.role === UserRole.CUSTOMER && ticket.status === TicketStatus.POSTPONE_REQUESTED && (
               <div className="mb-6 animate-in slide-in-from-top-4 duration-500">
                 <div className="bg-orange-500/10 border border-orange-500/30 rounded-[2rem] p-6 sm:p-8">
@@ -380,8 +391,8 @@ const TicketDetail: React.FC<Props> = ({
         />
       </div>
 
-      <div className="lg:col-span-4 space-y-6">
-        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-6 space-y-6">
+      <div className="lg:col-span-4 space-y-4">
+        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-4 space-y-4">
           <section>
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2.5">
               <Briefcase size={14} className="text-blue-500" /> Project Detail

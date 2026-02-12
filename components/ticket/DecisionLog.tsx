@@ -32,16 +32,16 @@ const DecisionLog: React.FC<DecisionLogProps> = ({ history }) => {
     if (decisions.length === 0) return null;
 
     return (
-        <div className="mt-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+        <div className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                 Decision History
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2">
                 {decisions.map((h) => (
-                    <div key={h.id} className={`p-4 rounded-xl border flex flex-col sm:flex-row gap-3 sm:items-center ${getActionColor(h.action!)}`}>
+                    <div key={h.id} className={`p-3 rounded-xl border flex flex-col sm:flex-row gap-3 sm:items-center ${getActionColor(h.action!)}`}>
                         <div className="flex items-center gap-3 shrink-0">
-                            <div className="p-2 bg-white rounded-lg shadow-sm">
+                            <div className="p-1.5 bg-white rounded-lg shadow-sm">
                                 {getActionIcon(h.action!)}
                             </div>
                             <div>
@@ -54,7 +54,7 @@ const DecisionLog: React.FC<DecisionLogProps> = ({ history }) => {
                             </div>
                         </div>
                         {h.note && (
-                            <div className="flex-1 text-sm font-medium border-t sm:border-t-0 sm:border-l border-black/5 pt-3 sm:pt-0 sm:pl-3 opacity-90 whitespace-pre-wrap">
+                            <div className="flex-1 text-sm font-medium border-t sm:border-t-0 sm:border-l border-black/5 pt-2 sm:pt-0 sm:pl-3 opacity-90 whitespace-pre-wrap">
                                 {h.note}
                             </div>
                         )}

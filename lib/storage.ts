@@ -184,6 +184,31 @@ export const saveProjects = async (projects: Project[]) => {
 };
 
 export const deleteProject = async (id: string) => {
+    // 1. 프로젝트에 속한 티켓 ID 조회
+    const { data: tickets, error: ticketFetchError } = await supabase.from('tickets').select('id').eq('project_id', id);
+    if (ticketFetchError) throw ticketFetchError;
+
+    const ticketIds = (tickets || []).map(t => t.id);
+
+    if (ticketIds.length > 0) {
+        // 2. 연관된 히스토리 삭제
+        const { error: histErr } = await supabase.from('history').delete().in('ticket_id', ticketIds);
+        if (histErr) console.warn('History deletion error during project delete:', histErr);
+
+        // 3. 연관된 댓글 삭제
+        const { error: commErr } = await supabase.from('comments').delete().in('ticket_id', ticketIds);
+        if (commErr) console.warn('Comments deletion error during project delete:', commErr);
+
+        // 4. 연관된 티켓 삭제
+        const { error: tErr } = await supabase.from('tickets').delete().in('id', ticketIds);
+        if (tErr) throw tErr;
+    }
+
+    // 5. 운영정보 삭제
+    const { error: opsErr } = await supabase.from('operational_info').delete().eq('project_id', id);
+    if (opsErr) console.warn('OpsInfo deletion error during project delete:', opsErr);
+
+    // 6. 프로젝트 삭제
     const { error } = await supabase.from('projects').delete().eq('id', id);
     if (error) throw error;
 };
@@ -282,8 +307,17 @@ export const saveTickets = async (tickets: Ticket[]) => {
 };
 
 export const deleteTicket = async (id: string) => {
-    const { error } = await supabase.from('tickets').delete().eq('id', id);
-    if (error) throw error;
+    // 1. 연관된 히스토리 삭제
+    const { error: historyError } = await supabase.from('history').delete().eq('ticket_id', id);
+    if (historyError) console.warn('History deletion warning:', historyError);
+
+    // 2. 연관된 댓글 삭제
+    const { error: commentError } = await supabase.from('comments').delete().eq('ticket_id', id);
+    if (commentError) console.warn('Comment deletion warning:', commentError);
+
+    // 3. 티켓 본체 삭제
+    const { error: ticketError } = await supabase.from('tickets').delete().eq('id', id);
+    if (ticketError) throw ticketError;
 };
 
 // --- 5. Comments (댓글) ---

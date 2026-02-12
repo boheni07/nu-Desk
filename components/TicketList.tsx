@@ -38,13 +38,15 @@ const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, o
     );
   }
 
-  // Permission Logic: Can edit/delete only if creator AND initial state
+  // Permission Logic: Admin can do anything, others only initial state of own tickets
   const canModify = (ticket: Ticket) => {
+    if (currentUser.role === UserRole.ADMIN) return true;
+
     const isCreator = ticket.customerId === currentUser.id;
-    const isInitialState = currentUser.role === UserRole.CUSTOMER 
-      ? ticket.status === TicketStatus.WAITING 
+    const isInitialState = currentUser.role === UserRole.CUSTOMER
+      ? ticket.status === TicketStatus.WAITING
       : ticket.status === TicketStatus.RECEIVED;
-    
+
     return isCreator && isInitialState;
   };
 
@@ -63,8 +65,8 @@ const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, o
       {/* Ticket Rows / Cards */}
       <div className="grid grid-cols-1 gap-3">
         {tickets.map(ticket => (
-          <div 
-            key={ticket.id} 
+          <div
+            key={ticket.id}
             className="group bg-white border border-slate-200 lg:border-slate-100 rounded-2xl lg:rounded-3xl p-5 sm:p-6 lg:p-0 transition-all hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/5 cursor-pointer"
           >
             {/* Mobile/Tablet Card Layout */}
@@ -77,18 +79,20 @@ const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, o
                   </span>
                   {canModify(ticket) && (
                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                      <button 
+                      <button
                         onClick={() => onEdit(ticket)}
                         className="p-1.5 bg-slate-50 text-slate-500 rounded-lg hover:text-blue-600"
                       >
                         <Pencil size={14} />
                       </button>
-                      <button 
-                        onClick={() => onDelete(ticket.id)}
-                        className="p-1.5 bg-slate-50 text-slate-500 rounded-lg hover:text-red-600"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {currentUser.role === UserRole.ADMIN && (
+                        <button
+                          onClick={() => onDelete(ticket.id)}
+                          className="p-1.5 bg-slate-50 text-slate-500 rounded-lg hover:text-red-600"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -151,20 +155,22 @@ const TicketList: React.FC<Props> = ({ tickets, currentUser, onSelect, onEdit, o
               <div className="col-span-1 flex items-center justify-end gap-1">
                 {canModify(ticket) && (
                   <div className="flex items-center gap-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                    <button 
+                    <button
                       onClick={() => onEdit(ticket)}
                       className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       title="수정"
                     >
                       <Pencil size={16} />
                     </button>
-                    <button 
-                      onClick={() => onDelete(ticket.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="삭제"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {currentUser.role === UserRole.ADMIN && (
+                      <button
+                        onClick={() => onDelete(ticket.id)}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="삭제"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 )}
                 <ChevronRight className="text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" size={18} />

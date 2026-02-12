@@ -33,14 +33,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({ comments, currentUser, 
     };
 
     return (
-        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-6 overflow-hidden">
-            <h3 className="text-base font-black text-slate-900 mb-6 flex items-center gap-3">
+        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-4 overflow-hidden">
+            <h3 className="text-base font-black text-slate-900 mb-4 flex items-center gap-3">
                 <div className="p-1.5 bg-blue-600 rounded-lg text-white shadow-lg"><MessageSquare size={16} /></div>
                 의견 나누기
             </h3>
 
             {!readOnly ? (
-                <div className="mb-6">
+                <div className="mb-4">
                     <div className="relative border border-slate-200 rounded-xl overflow-hidden focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500 transition-all bg-slate-50 shadow-inner">
                         <textarea
                             className="w-full px-4 py-3 outline-none text-sm resize-none min-h-[80px] bg-transparent leading-relaxed"
@@ -84,7 +84,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ comments, currentUser, 
                     </div>
                 </div>
             ) : (
-                <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                <div className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-xl text-center">
                     <p className="text-sm font-bold text-slate-400">티켓이 완료되어 더 이상 의견을 나눌 수 없습니다.</p>
                 </div>
             )}
@@ -95,9 +95,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({ comments, currentUser, 
                     return (
                         <div key={c.id} className={`flex w-full ${isMine ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-top-4`}>
                             <div className={`flex items-end gap-3 max-w-[90%] sm:max-w-[80%] ${isMine ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
-                                <div className="shrink-0 flex flex-col gap-1 pb-1">
-                                    <span className="text-[11px] font-black text-slate-900">{c.authorName}</span>
-                                    <span className="text-[9px] text-slate-400 font-bold uppercase">{formatDate(c.timestamp)}</span>
+                                <div className="shrink-0 flex flex-col gap-0.5 pb-1">
+                                    <span className="text-[10px] font-black text-slate-900">{c.authorName}</span>
+                                    <span className="text-[8px] text-slate-400 font-bold uppercase">{formatDate(c.timestamp)}</span>
                                 </div>
                                 <div className={`px-4 py-2.5 rounded-xl text-sm font-medium leading-relaxed border shadow-sm break-words ${isMine ? 'bg-blue-600 border-blue-500 text-white rounded-br-none' : 'bg-white border-slate-200 text-slate-700 rounded-tl-none'}`}>
                                     {c.content}

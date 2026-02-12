@@ -187,6 +187,10 @@ export const useAppState = () => {
     };
 
     const handleDeleteUser = async (id: string) => {
+        if (currentUser?.role !== UserRole.ADMIN) {
+            showToast('회원 삭제 권한이 없습니다.', 'error');
+            return;
+        }
         try {
             await storage.deleteUser(id);
             setUsers(prev => prev.filter(u => u.id !== id));
@@ -194,6 +198,33 @@ export const useAppState = () => {
         } catch (err) {
             console.error('User delete error:', err);
             showToast('사용자 삭제 중 오류가 발생했습니다.', 'error');
+        }
+    };
+
+    const handleCreateTicket = async (data: Omit<Ticket, 'id'>) => {
+        try {
+            // ID format: T-YYYYMMDD-SERIAL
+            const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+            const countForToday = tickets.filter(t => t.id.startsWith(`T-${today}`)).length + 1;
+            const id = `T-${today}-${String(countForToday).padStart(3, '0')}`;
+
+            const ticket = {
+                ...data,
+                id,
+                createdAt: new Date().toISOString(),
+                status: data.status || TicketStatus.RECEIVED
+            } as Ticket;
+
+            console.log('[useAppState] Creating Ticket:', ticket);
+            await storage.saveTicket(ticket);
+            setTickets(prev => [...prev, ticket]);
+            showToast('티켓이 생성되었습니다.', 'success');
+            return true;
+        } catch (err: any) {
+            console.error('Ticket creation error:', err);
+            const msg = err.message || '알 수 없는 오류';
+            showToast(`티켓 생성 실패: ${msg}`, 'error');
+            return false;
         }
     };
 
@@ -213,6 +244,15 @@ export const useAppState = () => {
         try {
             const company = companies.find(c => c.id === id);
             if (!company) return;
+
+            if (data.status === CompanyStatus.INACTIVE) {
+                const activeProjects = projects.filter(p => p.clientId === id && p.status === ProjectStatus.ACTIVE);
+                if (activeProjects.length > 0) {
+                    showToast(`활성 상태인 프로젝트가 ${activeProjects.length}개 있습니다. 먼저 프로젝트를 비활성화해주세요.`, 'error');
+                    return;
+                }
+            }
+
             const updated = { ...company, ...data };
             await storage.saveCompany(updated);
             setCompanies(prev => prev.map(c => c.id === id ? updated : c));
@@ -224,6 +264,17 @@ export const useAppState = () => {
     };
 
     const handleDeleteCompany = async (id: string) => {
+        if (currentUser?.role !== UserRole.ADMIN) {
+            showToast('고객사 삭제 권한이 없습니다.', 'error');
+            return;
+        }
+
+        const activeProjects = projects.filter(p => p.clientId === id && p.status === ProjectStatus.ACTIVE);
+        if (activeProjects.length > 0) {
+            showToast(`활성 상태인 프로젝트가 ${activeProjects.length}개 있습니다. 먼저 프로젝트를 비활성화해주세요.`, 'error');
+            return;
+        }
+
         try {
             await storage.deleteCompany(id);
             setCompanies(prev => prev.filter(c => c.id !== id));
@@ -236,31 +287,70 @@ export const useAppState = () => {
 
     const handleCreateProject = async (data: Omit<Project, 'id'>) => {
         try {
-            const project = { ...data, id: `p${Date.now()}` } as Project;
+            // 가시성 필터링 이슈 방지: 지원 인력이 비어있고 생성자가 지원 역할인 경우 자동 추가
+            const initialSupportStaff = [...data.supportStaffIds];
+            if (initialSupportStaff.length === 0 && currentUser &&
+                (currentUser.role === UserRole.SUPPORT_LEAD || currentUser.role === UserRole.SUPPORT_STAFF)) {
+                initialSupportStaff.push(currentUser.id);
+            }
+
+            const project = {
+                ...data,
+                id: `p${Date.now()}`,
+                supportStaffIds: initialSupportStaff
+            } as Project;
+
+            console.log('[useAppState] Creating Project:', project);
             await storage.saveProject(project);
             setProjects(prev => [...prev, project]);
             showToast('새 프로젝트가 등록되었습니다.', 'success');
-        } catch (err) {
+            return true;
+        } catch (err: any) {
             console.error('Project creation error:', err);
-            showToast('프로젝트 등록 중 오류가 발생했습니다.', 'error');
+            const msg = err.message || '알 수 없는 오류';
+            showToast(`프로젝트 등록 실패: ${msg}`, 'error');
+            return false;
         }
     };
 
     const handleUpdateProject = async (id: string, data: Partial<Project>) => {
         try {
             const project = projects.find(p => p.id === id);
-            if (!project) return;
+            if (!project) return false;
+
+            if (data.status === ProjectStatus.INACTIVE) {
+                const incompleteTickets = tickets.filter(t => t.projectId === id && t.status !== TicketStatus.COMPLETED);
+                if (incompleteTickets.length > 0) {
+                    showToast(`완료되지 않은 티켓이 ${incompleteTickets.length}개 있습니다. 모든 티켓을 완료 처리한 후 비활성화해주세요.`, 'error');
+                    return false;
+                }
+            }
+
             const updated = { ...project, ...data };
             await storage.saveProject(updated);
             setProjects(prev => prev.map(p => p.id === id ? updated : p));
             showToast('프로젝트 정보가 업데이트되었습니다.', 'success');
-        } catch (err) {
+            return true;
+        } catch (err: any) {
             console.error('Project update error:', err);
-            showToast('프로젝트 정보 수정 중 오류가 발생했습니다.', 'error');
+            const msg = err.message || '알 수 없는 오류';
+            showToast(`프로젝트 정보 수정 실패: ${msg}`, 'error');
+            return false;
         }
     };
 
     const handleDeleteProject = async (id: string) => {
+        if (currentUser?.role !== UserRole.ADMIN) {
+            showToast('프로젝트 삭제 권한이 없습니다.', 'error');
+            return;
+        }
+
+        const incompleteTickets = tickets.filter(t => t.projectId === id && t.status !== TicketStatus.COMPLETED);
+        if (incompleteTickets.length > 0) {
+            showToast(`완료되지 않은 티켓이 ${incompleteTickets.length}개 있습니다. 모든 티켓을 완료 처리한 후 삭제해주세요.`, 'error');
+            return;
+        }
+
         try {
             await storage.deleteProject(id);
             setProjects(prev => prev.filter(p => p.id !== id));

@@ -98,22 +98,28 @@ export const useTicketHandlers = ({
     }, [tickets, currentUser, setTickets, setHistory, changeView, showToast]);
 
     const handleDeleteTicket = useCallback(async (id: string) => {
-        if (window.confirm('정말 이 티켓을 삭제하시겠습니까?')) {
-            try {
-                // DB 삭제 우선
-                await storage.deleteTicket(id);
-
-                // 성공 시 UI 업데이트
-                setTickets(prev => prev.filter(t => t.id !== id));
-                setHistory(prev => prev.filter(h => h.ticketId !== id));
-                if (setComments) setComments(prev => prev.filter(c => c.ticketId !== id));
-                showToast('티켓이 삭제되었습니다.', 'success');
-            } catch (err) {
-                console.error('Ticket delete error:', err);
-                showToast('티켓 삭제 중 오류가 발생했습니다.', 'error');
-            }
+        if (currentUser.role !== UserRole.ADMIN) {
+            showToast('티켓 삭제 권한이 없습니다. 관리자에게 문의하세요.', 'error');
+            return;
         }
-    }, [setTickets, setHistory, setComments, showToast]);
+        try {
+            if (!window.confirm(`티켓(${id})을 정말 삭제하시겠습니까?\n모든 히스토리와 댓글이 함께 삭제됩니다.`)) return;
+
+            // DB 삭제 (storage.deleteTicket에서 연관 데이터 동시 처리)
+            await storage.deleteTicket(id);
+
+            // UI 업데이트
+            setTickets(prev => prev.filter(t => t.id !== id));
+            setHistory(prev => prev.filter(h => h.ticketId !== id));
+            setComments(prev => prev.filter(c => c.ticketId !== id));
+
+            showToast('티켓이 성공적으로 삭제되었습니다.', 'success');
+            changeView('list');
+        } catch (err) {
+            console.error('Ticket delete error:', err);
+            showToast('티켓 삭제 중 오류가 발생했습니다.', 'error');
+        }
+    }, [setTickets, setHistory, setComments, showToast, changeView]);
 
     const updateTicketStatus = useCallback(async (ticketId: string, newStatus: TicketStatus, updates: Partial<Ticket> = {}, note?: string, action?: string) => {
         try {

@@ -24,15 +24,15 @@ const ActivityHistory: React.FC<ActivityHistoryProps> = ({ history }) => {
     if (!history || history.length === 0) return null;
 
     return (
-        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-6 sm:p-8">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-4 sm:p-6">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3">
                 <div className="p-2 bg-blue-50 rounded-xl text-blue-600">
                     <History size={18} />
                 </div>
                 Activity History
             </h3>
 
-            <div className="relative space-y-8 before:absolute before:inset-0 before:left-[17px] before:w-[2px] before:bg-slate-100">
+            <div className="relative space-y-6 before:absolute before:inset-0 before:left-[17px] before:w-[2px] before:bg-slate-100">
                 {history.map((h, i) => (
                     <div key={h.id} className="relative pl-12 group">
                         {/* Timeline Marker */}
@@ -54,9 +54,9 @@ const ActivityHistory: React.FC<ActivityHistoryProps> = ({ history }) => {
                             </div>
 
                             {/* Note Detail (Inline) */}
-                            <div className={`text-xs leading-relaxed font-medium p-4 rounded-2xl border transition-colors ${i === 0
-                                    ? 'bg-blue-50/30 border-blue-100 text-slate-700 shadow-sm'
-                                    : 'bg-slate-50 border-slate-100 text-slate-500'
+                            <div className={`text-xs leading-relaxed font-medium p-3 rounded-2xl border transition-colors ${i === 0
+                                ? 'bg-blue-50/30 border-blue-100 text-slate-700 shadow-sm'
+                                : 'bg-slate-50 border-slate-100 text-slate-500'
                                 }`}>
                                 {h.note || '별도의 처리 내역이 없습니다.'}
                             </div>

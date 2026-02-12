@@ -145,16 +145,16 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
         <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 overflow-hidden">
           <SectionHeader title="하드웨어 (Hardware)" icon={Server} type="hardware" colorClass="bg-blue-100 text-blue-600" />
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="border-b border-slate-100 uppercase text-[10px] font-black text-slate-400 tracking-wider">
-                  <th className="px-4 py-3">용도</th>
-                  <th className="px-4 py-3">제조사/모델</th>
-                  <th className="px-4 py-3">CPU</th>
-                  <th className="px-4 py-3">MEM</th>
-                  <th className="px-4 py-3">HDD</th>
-                  <th className="px-4 py-3">비고</th>
-                  <th className="px-4 py-3 text-right">관리</th>
+                  <th className="px-4 py-3 w-[15%]">용도</th>
+                  <th className="px-4 py-3 w-[25%]">제조사/모델</th>
+                  <th className="px-4 py-3 w-[12%]">CPU</th>
+                  <th className="px-4 py-3 w-[10%]">MEM</th>
+                  <th className="px-4 py-3 w-[10%]">HDD</th>
+                  <th className="px-4 py-3 w-[20%]">비고</th>
+                  <th className="px-4 py-3 w-[8%] text-right">관리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 text-sm">
@@ -186,15 +186,15 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
         <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 overflow-hidden">
           <SectionHeader title="소프트웨어 (Software)" icon={Package} type="software" colorClass="bg-emerald-100 text-emerald-600" />
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="border-b border-slate-100 uppercase text-[10px] font-black text-slate-400 tracking-wider">
-                  <th className="px-4 py-3">용도</th>
-                  <th className="px-4 py-3">제품 및 버전</th>
-                  <th className="px-4 py-3">설치경로</th>
-                  <th className="px-4 py-3">기술지원</th>
-                  <th className="px-4 py-3">비고</th>
-                  <th className="px-4 py-3 text-right">관리</th>
+                  <th className="px-4 py-3 w-[15%]">용도</th>
+                  <th className="px-4 py-3 w-[25%]">제품 및 버전</th>
+                  <th className="px-4 py-3 w-[15%]">설치경로</th>
+                  <th className="px-4 py-3 w-[15%] text-center">기술지원</th>
+                  <th className="px-4 py-3 w-[20%]">비고</th>
+                  <th className="px-4 py-3 w-[10%] text-right">관리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 text-sm">
@@ -225,16 +225,16 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
         <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 overflow-hidden">
           <SectionHeader title="접속정보 (Access Info)" icon={ShieldCheck} type="access" colorClass="bg-amber-100 text-amber-600" />
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="border-b border-slate-100 uppercase text-[10px] font-black text-slate-400 tracking-wider">
-                  <th className="px-4 py-3">용도</th>
-                  <th className="px-4 py-3">접속대상</th>
-                  <th className="px-4 py-3">아이디</th>
-                  <th className="px-4 py-3">비밀번호</th>
-                  <th className="px-4 py-3">접속경로</th>
-                  <th className="px-4 py-3">비고</th>
-                  <th className="px-4 py-3 text-right">관리</th>
+                  <th className="px-4 py-3 w-[12%]">용도</th>
+                  <th className="px-4 py-3 w-[18%]">접속대상</th>
+                  <th className="px-4 py-3 w-[12%]">아이디</th>
+                  <th className="px-4 py-3 w-[12%]">비밀번호</th>
+                  <th className="px-4 py-3 w-[18%]">접속경로</th>
+                  <th className="px-4 py-3 w-[20%]">비고</th>
+                  <th className="px-4 py-3 w-[8%] text-right">관리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 text-sm">
@@ -283,29 +283,29 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
 };
 
 const AccessRow: React.FC<{ item: AccessInfo, onEdit: () => void, onDelete: () => void }> = ({ item, onEdit, onDelete }) => {
-  const [showPass, setShowPass] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   return (
     <tr className="hover:bg-slate-50/50 transition-colors">
-      <td className="px-4 py-3 font-bold text-amber-600">{item.usage || '-'}</td>
-      <td className="px-4 py-3 font-black text-slate-800">{item.target}</td>
-      <td className="px-4 py-3 font-bold text-slate-700">{item.loginId || '-'}</td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-slate-600 font-bold">{showPass ? (item.password1 || '-') : '••••••••'}</span>
-          <button onClick={() => setShowPass(!showPass)} className="text-slate-400 hover:text-blue-600 transition-colors">
-            {showPass ? <EyeOff size={12} /> : <Eye size={12} />}
+      <td className="px-4 py-3 font-bold text-amber-600 truncate">{item.usage || '-'}</td>
+      <td className="px-4 py-3 font-black text-slate-800 truncate">{item.targetName}</td>
+      <td className="px-4 py-3 font-bold text-slate-600 truncate">{item.loginId || '-'}</td>
+      <td className="px-4 py-3 font-bold text-slate-600">
+        <div className="flex items-center gap-2 overflow-hidden">
+          <span className="truncate">{showPassword ? item.password : '••••••••'}</span>
+          <button onClick={() => setShowPassword(!showPassword)} className="shrink-0 p-1 hover:bg-white rounded transition-colors text-slate-400">
+            {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
           </button>
         </div>
       </td>
-      <td className="px-4 py-3 font-medium text-slate-600 max-w-[150px] truncate">{item.accessPath || '-'}</td>
-      <td className="px-4 py-3 text-slate-500 max-w-[200px] truncate">{item.remarks || '-'}</td>
+      <td className="px-4 py-3 text-slate-500 truncate">{item.accessUrl || '-'}</td>
+      <td className="px-4 py-3 text-slate-500 truncate">{item.remarks || '-'}</td>
       <td className="px-4 py-3 text-right">
         <div className="flex justify-end gap-1">
           <button onClick={onEdit} className="p-1.5 hover:bg-white rounded hover:shadow-sm text-slate-400 hover:text-blue-600 transition-all"><Edit2 size={14} /></button>
           <button onClick={onDelete} className="p-1.5 hover:bg-white rounded hover:shadow-sm text-slate-400 hover:text-rose-600 transition-all"><Trash2 size={14} /></button>
         </div>
       </td>
-    </tr >
+    </tr>
   );
 };
 

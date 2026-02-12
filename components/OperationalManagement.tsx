@@ -99,7 +99,7 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${colorClass}`}>
           <Icon size={18} />
         </div>
-        <h4 className="text-sm font-bold text-slate-800">{title}</h4>
+        <h4 className="text-lg font-black text-slate-800">{title}</h4>
       </div>
       {type !== 'other' && (
         <button
@@ -152,20 +152,20 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
 
       <div className="grid grid-cols-1 gap-6">
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-5 border-b border-slate-100 pb-4">
+          <div className="px-5 py-3 border-b border-slate-100">
             <SectionHeader title="하드웨어 (Hardware)" icon={Server} type="hardware" colorClass="bg-blue-50 text-blue-600" />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left table-fixed">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider">
-                  <th className="px-5 py-4 font-bold w-[15%]">용도</th>
-                  <th className="px-5 py-4 font-bold w-[25%]">제조사/모델</th>
-                  <th className="px-5 py-4 font-bold w-[12%]">CPU</th>
-                  <th className="px-5 py-4 font-bold w-[10%]">MEM</th>
-                  <th className="px-5 py-4 font-bold w-[10%]">HDD</th>
-                  <th className="px-5 py-4 font-bold w-[20%]">비고</th>
-                  <th className="px-5 py-4 font-bold w-[8%] text-right pr-6">관리</th>
+                  <th className="px-5 py-2.5 font-bold w-[15%]">용도</th>
+                  <th className="px-5 py-2.5 font-bold w-[25%]">제조사/모델</th>
+                  <th className="px-5 py-2.5 font-bold w-[12%]">CPU</th>
+                  <th className="px-5 py-2.5 font-bold w-[10%]">MEM</th>
+                  <th className="px-5 py-2.5 font-bold w-[10%]">HDD</th>
+                  <th className="px-5 py-2.5 font-bold w-[20%]">비고</th>
+                  <th className="px-5 py-2.5 font-bold w-[8%] text-right pr-6">관리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
@@ -174,16 +174,16 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
                 ) : (
                   currentOpsInfo.hardware.map(item => (
                     <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-5 py-4 font-bold text-blue-600 truncate">{item.usage || '-'}</td>
-                      <td className="px-5 py-4 font-bold text-slate-800 truncate">{item.manufacturer} {item.model}</td>
-                      <td className="px-5 py-4 text-slate-600 truncate">{item.cpu || '-'}</td>
-                      <td className="px-5 py-4 text-slate-600 truncate">{item.memory || '-'}</td>
-                      <td className="px-5 py-4 text-slate-600 truncate">{item.hdd || '-'}</td>
-                      <td className="px-5 py-4 text-slate-500 max-w-[200px] truncate">{item.remarks || '-'}</td>
-                      <td className="px-5 py-4 text-right pr-6">
+                      <td className="px-5 py-2.5 font-bold text-blue-600 truncate">{item.usage || '-'}</td>
+                      <td className="px-5 py-2.5 font-bold text-slate-800 truncate">{item.manufacturer} {item.model}</td>
+                      <td className="px-5 py-2.5 text-slate-600 truncate">{item.cpu || '-'}</td>
+                      <td className="px-5 py-2.5 text-slate-600 truncate">{item.memory || '-'}</td>
+                      <td className="px-5 py-2.5 text-slate-600 truncate">{item.hdd || '-'}</td>
+                      <td className="px-5 py-2.5 text-slate-500 max-w-[200px] truncate">{item.remarks || '-'}</td>
+                      <td className="px-5 py-2.5 text-right pr-6">
                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => { setEditingItem({ type: 'hardware', data: item }); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="수정"><Edit2 size={16} /></button>
-                          <button onClick={() => handleDelete('hardware', item)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="삭제"><Trash2 size={16} /></button>
+                          <button onClick={() => { setEditingItem({ type: 'hardware', data: item }); setIsModalOpen(true); }} className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="수정"><Edit2 size={16} /></button>
+                          <button onClick={() => handleDelete('hardware', item)} className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="삭제"><Trash2 size={16} /></button>
                         </div>
                       </td>
                     </tr>
@@ -195,19 +195,19 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
         </section>
 
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-5 border-b border-slate-100 pb-4">
+          <div className="px-5 py-3 border-b border-slate-100">
             <SectionHeader title="소프트웨어 (Software)" icon={Package} type="software" colorClass="bg-emerald-50 text-emerald-600" />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left table-fixed">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider">
-                  <th className="px-5 py-4 font-bold w-[15%]">용도</th>
-                  <th className="px-5 py-4 font-bold w-[25%]">제품 및 버전</th>
-                  <th className="px-5 py-4 font-bold w-[15%]">설치경로</th>
-                  <th className="px-5 py-4 font-bold w-[15%] text-center">기술지원</th>
-                  <th className="px-5 py-4 font-bold w-[20%]">비고</th>
-                  <th className="px-5 py-4 font-bold w-[10%] text-right pr-6">관리</th>
+                  <th className="px-5 py-2.5 font-bold w-[15%]">용도</th>
+                  <th className="px-5 py-2.5 font-bold w-[25%]">제품 및 버전</th>
+                  <th className="px-5 py-2.5 font-bold w-[15%]">설치경로</th>
+                  <th className="px-5 py-2.5 font-bold w-[15%] text-center">기술지원</th>
+                  <th className="px-5 py-2.5 font-bold w-[20%]">비고</th>
+                  <th className="px-5 py-2.5 font-bold w-[10%] text-right pr-6">관리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
@@ -216,15 +216,15 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
                 ) : (
                   currentOpsInfo.software.map(item => (
                     <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-5 py-4 font-bold text-emerald-600 truncate">{item.usage || '-'}</td>
-                      <td className="px-5 py-4 font-bold text-slate-800 truncate">{item.productVersion}</td>
-                      <td className="px-5 py-4 font-medium text-slate-500 max-w-[150px] truncate">{item.installPath || '-'}</td>
-                      <td className="px-5 py-4 text-slate-600 truncate">{item.techSupport || '-'}</td>
-                      <td className="px-5 py-4 text-slate-500 max-w-[200px] truncate">{item.remarks || '-'}</td>
-                      <td className="px-5 py-4 text-right pr-6">
+                      <td className="px-5 py-2.5 font-bold text-emerald-600 truncate">{item.usage || '-'}</td>
+                      <td className="px-5 py-2.5 font-bold text-slate-800 truncate">{item.productVersion}</td>
+                      <td className="px-5 py-2.5 font-medium text-slate-500 max-w-[150px] truncate">{item.installPath || '-'}</td>
+                      <td className="px-5 py-2.5 text-slate-600 truncate">{item.techSupport || '-'}</td>
+                      <td className="px-5 py-2.5 text-slate-500 max-w-[200px] truncate">{item.remarks || '-'}</td>
+                      <td className="px-5 py-2.5 text-right pr-6">
                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => { setEditingItem({ type: 'software', data: item }); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="수정"><Edit2 size={16} /></button>
-                          <button onClick={() => handleDelete('software', item)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="삭제"><Trash2 size={16} /></button>
+                          <button onClick={() => { setEditingItem({ type: 'software', data: item }); setIsModalOpen(true); }} className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="수정"><Edit2 size={16} /></button>
+                          <button onClick={() => handleDelete('software', item)} className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="삭제"><Trash2 size={16} /></button>
                         </div>
                       </td>
                     </tr>
@@ -236,20 +236,20 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
         </section>
 
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-5 border-b border-slate-100 pb-4">
+          <div className="px-5 py-3 border-b border-slate-100">
             <SectionHeader title="접속정보 (Access Info)" icon={ShieldCheck} type="access" colorClass="bg-amber-50 text-amber-600" />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left table-fixed">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider">
-                  <th className="px-5 py-4 font-bold w-[12%]">용도</th>
-                  <th className="px-5 py-4 font-bold w-[18%]">접속대상</th>
-                  <th className="px-5 py-4 font-bold w-[12%]">아이디</th>
-                  <th className="px-5 py-4 font-bold w-[12%]">비밀번호</th>
-                  <th className="px-5 py-4 font-bold w-[18%]">접속경로</th>
-                  <th className="px-5 py-4 font-bold w-[20%]">비고</th>
-                  <th className="px-5 py-4 font-bold w-[8%] text-right pr-6">관리</th>
+                  <th className="px-5 py-2.5 font-bold w-[12%]">용도</th>
+                  <th className="px-5 py-2.5 font-bold w-[18%]">접속대상</th>
+                  <th className="px-5 py-2.5 font-bold w-[12%]">아이디</th>
+                  <th className="px-5 py-2.5 font-bold w-[12%]">비밀번호</th>
+                  <th className="px-5 py-2.5 font-bold w-[18%]">접속경로</th>
+                  <th className="px-5 py-2.5 font-bold w-[20%]">비고</th>
+                  <th className="px-5 py-2.5 font-bold w-[8%] text-right pr-6">관리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
@@ -265,7 +265,7 @@ const OperationalManagement: React.FC<Props> = ({ projects, opsInfo, onUpdate })
           </div>
         </section>
 
-        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
           <SectionHeader title="기타 참고사항 (Other Notes)" icon={FileText} type="other" colorClass="bg-rose-50 text-rose-600" />
           <textarea
             value={currentOpsInfo.otherNotes}
@@ -336,23 +336,23 @@ const AccessRow: React.FC<{ item: AccessInfo, onEdit: () => void, onDelete: () =
   const [showPassword, setShowPassword] = useState(false);
   return (
     <tr className="hover:bg-slate-50/50 transition-colors group">
-      <td className="px-5 py-4 font-bold text-amber-600 truncate">{item.usage || '-'}</td>
-      <td className="px-5 py-4 font-bold text-slate-800 truncate">{item.targetName}</td>
-      <td className="px-5 py-4 text-slate-600 truncate">{item.loginId || '-'}</td>
-      <td className="px-5 py-4 text-slate-600">
+      <td className="px-5 py-2.5 font-bold text-amber-600 truncate">{item.usage || '-'}</td>
+      <td className="px-5 py-2.5 font-bold text-slate-800 truncate">{item.targetName}</td>
+      <td className="px-5 py-2.5 text-slate-600 truncate">{item.loginId || '-'}</td>
+      <td className="px-5 py-2.5 text-slate-600">
         <div className="flex items-center gap-2 overflow-hidden">
           <span className="truncate">{showPassword ? item.password : '••••••••'}</span>
-          <button onClick={() => setShowPassword(!showPassword)} className="shrink-0 p-1 hover:bg-white rounded transition-colors text-slate-400">
+          <button onClick={() => setShowPassword(!showPassword)} className="shrink-0 p-0.5 hover:bg-white rounded transition-colors text-slate-400">
             {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
         </div>
       </td>
-      <td className="px-5 py-4 text-slate-500 truncate">{item.accessUrl || '-'}</td>
-      <td className="px-5 py-4 text-slate-500 truncate">{item.remarks || '-'}</td>
-      <td className="px-5 py-4 text-right pr-6">
+      <td className="px-5 py-2.5 text-slate-500 truncate">{item.accessUrl || '-'}</td>
+      <td className="px-5 py-2.5 text-slate-500 truncate">{item.remarks || '-'}</td>
+      <td className="px-5 py-2.5 text-right pr-6">
         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={onEdit} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="수정"><Edit2 size={16} /></button>
-          <button onClick={onDelete} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="삭제"><Trash2 size={16} /></button>
+          <button onClick={onEdit} className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="수정"><Edit2 size={16} /></button>
+          <button onClick={onDelete} className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="삭제"><Trash2 size={16} /></button>
         </div>
       </td>
     </tr>

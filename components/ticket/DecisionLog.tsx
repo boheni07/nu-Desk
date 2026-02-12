@@ -27,11 +27,13 @@ const getActionColor = (action: string) => {
 };
 
 const DecisionLog: React.FC<DecisionLogProps> = ({ history }) => {
-    // Robust filtering: trim whitespace and handle potential nulls
+    // Robust filtering: check both action and status
     const decisions = history.filter(h => {
-        if (!h.action) return false;
-        const trimmedAction = h.action.trim();
-        return DECISION_ACTIONS.some(a => trimmedAction.includes(a));
+        const actionText = h.action?.trim() || '';
+        const statusText = h.status?.trim() || '';
+        const combined = (actionText + statusText).replace(/\s/g, ''); // Remove spaces for easier matching
+
+        return DECISION_ACTIONS.some(a => combined.includes(a.replace(/\s/g, '')));
     });
 
     if (decisions.length === 0) return null;
@@ -47,25 +49,32 @@ const DecisionLog: React.FC<DecisionLogProps> = ({ history }) => {
     const groups: { request?: HistoryEntry; decision?: HistoryEntry }[] = [];
     const usedIds = new Set<string>();
 
-    const REQUEST_ACTIONS = ['연기 요청', '완료 보고'];
-    const DECISION_RESULT_ACTIONS = ['연기 승인', '연기 거절', '최종 승인', '보완 요청'];
+    const isRequest = (h: HistoryEntry) => {
+        const text = ((h.action || '') + (h.status || '')).replace(/\s/g, '');
+        return text.includes('연기요청') || text.includes('완료보고') || text.includes('완료요청');
+    };
+
+    const isResult = (h: HistoryEntry) => {
+        const text = ((h.action || '') + (h.status || '')).replace(/\s/g, '');
+        return text.includes('승인') || text.includes('거절') || text.includes('보완');
+    };
 
     sortedDecisions.forEach((h, index) => {
         if (usedIds.has(h.id)) return;
 
-        const action = h.action?.trim() || '';
-
-        if (REQUEST_ACTIONS.some(a => action.includes(a))) {
+        if (isRequest(h)) {
             const group: { request?: HistoryEntry; decision?: HistoryEntry } = { request: h };
             usedIds.add(h.id);
 
             const matchingDecision = sortedDecisions.slice(index + 1).find((d) => {
                 if (usedIds.has(d.id)) return false;
-                const dAction = d.action?.trim() || '';
-                if (!DECISION_RESULT_ACTIONS.some(a => dAction.includes(a))) return false;
+                if (!isResult(d)) return false;
 
-                if (action.includes('연기') && dAction.includes('연기')) return true;
-                if (action.includes('완료 보고') && (dAction.includes('최종 승인') || dAction.includes('보완 요청'))) return true;
+                const reqText = ((h.action || '') + (h.status || '')).replace(/\s/g, '');
+                const resText = ((d.action || '') + (d.status || '')).replace(/\s/g, '');
+
+                if (reqText.includes('연기') && resText.includes('연기')) return true;
+                if (reqText.includes('완료') && (resText.includes('승인') || resText.includes('보완'))) return true;
 
                 return false;
             });
@@ -75,7 +84,7 @@ const DecisionLog: React.FC<DecisionLogProps> = ({ history }) => {
                 usedIds.add(matchingDecision.id);
             }
             groups.push(group);
-        } else if (DECISION_RESULT_ACTIONS.some(a => action.includes(a))) {
+        } else if (isResult(h)) {
             groups.push({ decision: h });
             usedIds.add(h.id);
         }

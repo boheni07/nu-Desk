@@ -239,95 +239,182 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ projects, compani
       </div>
 
       {/* Content Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table className="w-full text-left table-fixed">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider">
-              <th className="px-5 py-4 font-bold w-[35%]">프로젝트명</th>
-              <th className="px-5 py-4 font-bold w-[15%]">고객사</th>
-              <th className="px-5 py-4 font-bold w-[10%]">상태</th>
-              <th className="px-5 py-4 font-bold w-[18%]">기간</th>
-              <th className="px-5 py-4 font-bold w-[15%]">담당자 (PM)</th>
-              <th className="px-5 py-4 font-bold w-[7%] text-right pr-6">관리</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
+      <div className="bg-transparent">
+        {viewMode === 'list' ? (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <table className="w-full text-left table-fixed">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider">
+                  <th className="px-5 py-4 font-bold w-[35%]">프로젝트명</th>
+                  <th className="px-5 py-4 font-bold w-[15%]">고객사</th>
+                  <th className="px-5 py-4 font-bold w-[10%]">상태</th>
+                  <th className="px-5 py-4 font-bold w-[18%]">기간</th>
+                  <th className="px-5 py-4 font-bold w-[15%]">담당자 (PM)</th>
+                  <th className="px-5 py-4 font-bold w-[7%] text-right pr-6">관리</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredProjects.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
+                      배정된 프로젝트가 없거나 검색 결과가 없습니다.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredProjects.map(project => {
+                    const client = companies.find(c => c.id === project.clientId);
+                    const pm = users.find(u => u.id === project.supportStaffIds[0]);
+                    const isActive = project.status === ProjectStatus.ACTIVE;
+                    return (
+                      <tr key={project.id} className="hover:bg-slate-50 transition-colors group text-sm">
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center font-bold ${isActive ? 'bg-indigo-50 text-indigo-500' : 'bg-slate-100 text-slate-400'}`}>
+                              <Briefcase size={18} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className={`font-bold truncate ${isActive ? 'text-slate-700' : 'text-slate-400'}`}>{project.name}</p>
+                              <p className="text-[11px] text-slate-400 truncate">{project.description}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className="text-slate-600 font-medium truncate block">{client?.name || '정보 없음'}</span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${isActive ? 'bg-green-100 text-green-700 border-green-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                            {project.status}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-slate-500 text-[11px]">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar size={12} className="text-slate-300" />
+                            <span>
+                              {project.startDate && project.endDate
+                                ? `${project.startDate} ~ ${project.endDate}`
+                                : '-'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            {pm ? (
+                              <>
+                                <div className="shrink-0 w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-600">
+                                  {pm.name.charAt(0)}
+                                </div>
+                                <span className="font-semibold text-slate-700 truncate">{pm.name}</span>
+                              </>
+                            ) : '-'}
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-right pr-6">
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {currentUser.role !== UserRole.CUSTOMER && (
+                              <>
+                                <button onClick={() => handleOpenEditModal(project)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="수정">
+                                  <Edit2 size={16} />
+                                </button>
+                                {currentUser.role === UserRole.ADMIN && (
+                                  <button onClick={() => handleOpenDeleteModal(project)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="삭제">
+                                    <Trash2 size={16} />
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProjects.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
-                  배정된 프로젝트가 없거나 검색 결과가 없습니다.
-                </td>
-              </tr>
+              <div className="col-span-full bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center text-slate-400 italic">
+                배정된 프로젝트가 없거나 검색 결과가 없습니다.
+              </div>
             ) : (
               filteredProjects.map(project => {
                 const client = companies.find(c => c.id === project.clientId);
                 const pm = users.find(u => u.id === project.supportStaffIds[0]);
                 const isActive = project.status === ProjectStatus.ACTIVE;
+                const progress = getProjectProgress(project.id);
+
                 return (
-                  <tr key={project.id} className="hover:bg-slate-50 transition-colors group text-sm">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center font-bold ${isActive ? 'bg-indigo-50 text-indigo-500' : 'bg-slate-100 text-slate-400'}`}>
-                          <Briefcase size={18} />
-                        </div>
-                        <div className="min-w-0">
-                          <p className={`font-bold truncate ${isActive ? 'text-slate-700' : 'text-slate-400'}`}>{project.name}</p>
-                          <p className="text-[11px] text-slate-400 truncate">{project.description}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="text-slate-600 font-medium truncate block">{client?.name || '정보 없음'}</span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${isActive ? 'bg-green-100 text-green-700 border-green-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
-                        {project.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-slate-500 text-[11px]">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar size={12} className="text-slate-300" />
-                        <span>
-                          {project.startDate && project.endDate
-                            ? `${project.startDate} ~ ${project.endDate}`
-                            : '-'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        {pm ? (
-                          <>
-                            <div className="shrink-0 w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-600">
-                              {pm.name.charAt(0)}
-                            </div>
-                            <span className="font-semibold text-slate-700 truncate">{pm.name}</span>
-                          </>
-                        ) : '-'}
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-right pr-6">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {currentUser.role !== UserRole.CUSTOMER && (
-                          <>
-                            <button onClick={() => handleOpenEditModal(project)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="수정">
-                              <Edit2 size={16} />
-                            </button>
-                            {currentUser.role === UserRole.ADMIN && (
-                              <button onClick={() => handleOpenDeleteModal(project)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="삭제">
-                                <Trash2 size={16} />
-                              </button>
-                            )}
-                          </>
+                  <div key={project.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-all group relative">
+                    {/* Action Buttons */}
+                    {currentUser.role !== UserRole.CUSTOMER && (
+                      <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleOpenEditModal(project)}
+                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        {currentUser.role === UserRole.ADMIN && (
+                          <button
+                            onClick={() => handleOpenDeleteModal(project)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         )}
                       </div>
-                    </td>
-                  </tr>
+                    )}
+
+                    <div className="flex justify-between items-start mb-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold mb-4 ${isActive ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
+                        <Briefcase size={24} />
+                      </div>
+                      <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold border ${isActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                        {project.status}
+                      </span>
+                    </div>
+
+                    <h3 className={`text-lg font-bold mb-1 truncate ${isActive ? 'text-slate-800' : 'text-slate-400'}`}>{project.name}</h3>
+                    <p className="text-sm text-slate-500 mb-4 h-10 line-clamp-2">{project.description || '설명 없음'}</p>
+
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <Building size={16} className="text-slate-400" />
+                        <span className="truncate">{client?.name || '정보 없음'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <Calendar size={16} className="text-slate-400" />
+                        <span className="truncate">
+                          {project.startDate && project.endDate
+                            ? `${project.startDate} ~ ${project.endDate}`
+                            : '기간 미정'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <UserIcon size={16} className="text-slate-400" />
+                        <span className="truncate">{pm ? `PM: ${pm.name}` : 'PM 미배정'}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-xs font-bold text-slate-500">
+                        <span>진행률</span>
+                        <span className="text-blue-600">{progress}%</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${isActive ? 'bg-blue-500' : 'bg-slate-300'}`}
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 );
               })
             )}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
 
       {isModalOpen && (

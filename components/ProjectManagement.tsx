@@ -248,7 +248,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ projects, compani
               <th className="px-5 py-4 font-bold w-[10%]">상태</th>
               <th className="px-5 py-4 font-bold w-[18%]">기간</th>
               <th className="px-5 py-4 font-bold w-[15%]">담당자 (PM)</th>
-              <th className="px-5 py-4 font-bold w-[7%] text-right">관리</th>
+              <th className="px-5 py-4 font-bold w-[7%] text-right pr-6">관리</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -306,7 +306,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ projects, compani
                         ) : '-'}
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-right">
+                    <td className="px-5 py-4 text-right pr-6">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         {currentUser.role !== UserRole.CUSTOMER && (
                           <>

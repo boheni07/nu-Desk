@@ -192,7 +192,7 @@ const UserManagement: React.FC<Props> = ({ users, companies, projects, tickets, 
               <th className="px-5 py-4 font-bold w-[13%]">종류</th>
               <th className="px-5 py-4 font-bold w-[10%]">상태</th>
               <th className="px-5 py-4 font-bold w-[15%]">휴대폰</th>
-              <th className="px-5 py-4 font-bold w-[25%]">소속</th>
+              <th className="px-5 py-4 font-bold w-[25%] text-indigo-600">소속*</th>
               <th className="px-5 py-4 font-bold w-[10%] text-right pr-6">관리</th>
             </tr>
           </thead>

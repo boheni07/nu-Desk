@@ -168,7 +168,7 @@ const CompanyManagement: React.FC<Props> = ({ companies, users, projects, ticket
         <table className="w-full text-left table-fixed">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider">
-              <th className="px-5 py-4 font-bold w-[40%] text-indigo-600">기관명*</th>
+              <th className="px-5 py-4 font-bold w-[40%]">기관명</th>
               <th className="px-5 py-4 font-bold w-[20%]">대표자</th>
               <th className="px-5 py-4 font-bold w-[20%]">업종</th>
               <th className="px-5 py-4 font-bold w-[10%] text-center">상태</th>

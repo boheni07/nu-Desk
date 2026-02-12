@@ -12,19 +12,22 @@ const DECISION_ACTIONS = [
     '완료 보고', '최종 승인', '보완 요청'
 ];
 
-const getActionIcon = (action: string) => {
+const getActionIcon = (action?: string | null) => {
+    if (!action) return <ArrowRight size={14} className="text-slate-400" />;
     if (action.includes('승인') || action.includes('완료')) return <CheckCircle2 size={14} className="text-emerald-500" />;
     if (action.includes('거절') || action.includes('보완')) return <XCircle size={14} className="text-rose-500" />;
     if (action.includes('요청')) return <AlertTriangle size={14} className="text-orange-500" />;
     return <ArrowRight size={14} className="text-slate-400" />;
 };
 
-const getActionColor = (action: string) => {
+const getActionColor = (action?: string | null) => {
+    if (!action) return 'bg-slate-50 border-slate-100 text-slate-700';
     if (action.includes('승인') || action.includes('완료')) return 'bg-emerald-50 border-emerald-100 text-emerald-900';
     if (action.includes('거절') || action.includes('보완')) return 'bg-rose-50 border-rose-100 text-rose-900';
     if (action.includes('요청')) return 'bg-orange-50 border-orange-100 text-orange-900';
     return 'bg-slate-50 border-slate-100 text-slate-700';
 };
+
 
 const DecisionLog: React.FC<DecisionLogProps> = ({ history }) => {
     // Robust filtering: check both action and status
@@ -103,30 +106,32 @@ const DecisionLog: React.FC<DecisionLogProps> = ({ history }) => {
         }
     };
 
-    const renderEntry = (h: HistoryEntry, isDecision: boolean = false) => (
-        <div className={`p-2 rounded-xl border flex flex-col gap-1.5 h-full ${getActionColor(h.action!)}`}>
-            <div className="flex items-center gap-2 shrink-0 w-full overflow-hidden">
-                <div className="p-1 bg-white rounded-lg shadow-sm shrink-0">
-                    {getActionIcon(h.action!)}
+    const renderEntry = (h: HistoryEntry, isDecision: boolean = false) => {
+        const displayAction = h.action || h.status || '알 수 없음';
+        return (
+            <div className={`p-2 rounded-xl border flex flex-col gap-1.5 h-full ${getActionColor(displayAction)}`}>
+                <div className="flex items-center gap-2 shrink-0 w-full overflow-hidden">
+                    <div className="p-1 bg-white rounded-lg shadow-sm shrink-0">
+                        {getActionIcon(displayAction)}
+                    </div>
+                    <div className="flex-1 flex items-baseline justify-between min-w-0 gap-2">
+                        <span className="text-xs font-black leading-tight truncate">
+                            {displayAction}
+                        </span>
+
+                        <span className="text-[9px] font-black uppercase opacity-50 tracking-wider text-slate-500 whitespace-nowrap">
+                            {safeFormatDate(h.timestamp)} · {h.changedBy}
+                        </span>
+                    </div>
                 </div>
-                <div className="flex-1 flex items-baseline justify-between min-w-0 gap-2">
-                    <span className="text-xs font-black leading-tight truncate">
-                        {h.action}
-                    </span>
-                    <span className="text-[9px] font-black uppercase opacity-50 tracking-wider text-slate-500 whitespace-nowrap">
-                        {safeFormatDate(h.timestamp)} · {h.changedBy}
-                    </span>
-                </div>
+                {h.note && (
+                    <div className="text-[12px] font-medium border-t border-black/5 pt-1.5 opacity-90 whitespace-pre-wrap leading-snug">
+                        {h.note}
+                    </div>
+                )}
             </div>
-            {h.note && (
-                <div className="text-[12px] font-medium border-t border-black/5 pt-1.5 opacity-90 whitespace-pre-wrap leading-snug">
-                    {h.note}
-                </div>
-            )}
-        </div>
-    );
-
-
+        );
+    };
 
     return (
         <div className="mt-3 animate-in fade-in slide-in-from-bottom-2 duration-500">

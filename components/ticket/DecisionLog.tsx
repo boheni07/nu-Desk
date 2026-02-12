@@ -27,14 +27,21 @@ const getActionColor = (action: string) => {
 };
 
 const DecisionLog: React.FC<DecisionLogProps> = ({ history }) => {
-    const decisions = history.filter(h => h.action && DECISION_ACTIONS.some(a => h.action?.includes(a)));
+    // Robust filtering: trim whitespace and handle potential nulls
+    const decisions = history.filter(h => {
+        if (!h.action) return false;
+        const trimmedAction = h.action.trim();
+        return DECISION_ACTIONS.some(a => trimmedAction.includes(a));
+    });
 
     if (decisions.length === 0) return null;
 
-    // Sort chromologically (oldest first) for pairing
-    const sortedDecisions = [...decisions].sort((a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
+    // Sort chronologically (oldest first) for pairing
+    const sortedDecisions = [...decisions].sort((a, b) => {
+        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return timeA - timeB;
+    });
 
     // Grouping logic
     const groups: { request?: HistoryEntry; decision?: HistoryEntry }[] = [];
@@ -46,18 +53,19 @@ const DecisionLog: React.FC<DecisionLogProps> = ({ history }) => {
     sortedDecisions.forEach((h, index) => {
         if (usedIds.has(h.id)) return;
 
-        if (REQUEST_ACTIONS.some(a => h.action?.includes(a))) {
+        const action = h.action?.trim() || '';
+
+        if (REQUEST_ACTIONS.some(a => action.includes(a))) {
             const group: { request?: HistoryEntry; decision?: HistoryEntry } = { request: h };
             usedIds.add(h.id);
 
-            // Find the *next* subsequent matching decision
             const matchingDecision = sortedDecisions.slice(index + 1).find((d) => {
                 if (usedIds.has(d.id)) return false;
-                if (!DECISION_RESULT_ACTIONS.some(a => d.action?.includes(a))) return false;
+                const dAction = d.action?.trim() || '';
+                if (!DECISION_RESULT_ACTIONS.some(a => dAction.includes(a))) return false;
 
-                // Simple pairing: 연기 요청 -> 연기 승인/거절, 완료 보고 -> 최종 승인/보완 요청
-                if (h.action?.includes('연기') && d.action?.includes('연기')) return true;
-                if (h.action?.includes('완료 보고') && (d.action?.includes('최종 승인') || d.action?.includes('보완 요청'))) return true;
+                if (action.includes('연기') && dAction.includes('연기')) return true;
+                if (action.includes('완료 보고') && (dAction.includes('최종 승인') || dAction.includes('보완 요청'))) return true;
 
                 return false;
             });
@@ -67,16 +75,24 @@ const DecisionLog: React.FC<DecisionLogProps> = ({ history }) => {
                 usedIds.add(matchingDecision.id);
             }
             groups.push(group);
-        } else if (DECISION_RESULT_ACTIONS.some(a => h.action?.includes(a))) {
-            // Standalone decision (no matching request found earlier)
+        } else if (DECISION_RESULT_ACTIONS.some(a => action.includes(a))) {
             groups.push({ decision: h });
             usedIds.add(h.id);
         }
     });
 
-    // Show latest groups first
     groups.reverse();
 
+    const safeFormatDate = (dateStr: string) => {
+        try {
+            if (!dateStr) return '날짜 없음';
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '유효하지 않은 날짜';
+            return format(date, 'MM-dd HH:mm');
+        } catch (e) {
+            return '날짜 오류';
+        }
+    };
 
     const renderEntry = (h: HistoryEntry, isDecision: boolean = false) => (
         <div className={`p-2 rounded-xl border flex flex-col gap-1.5 h-full ${getActionColor(h.action!)}`}>
@@ -89,7 +105,7 @@ const DecisionLog: React.FC<DecisionLogProps> = ({ history }) => {
                         {h.action}
                     </span>
                     <span className="text-[9px] font-black uppercase opacity-50 tracking-wider text-slate-500 whitespace-nowrap">
-                        {format(new Date(h.timestamp), 'MM-dd HH:mm')} · {h.changedBy}
+                        {safeFormatDate(h.timestamp)} · {h.changedBy}
                     </span>
                 </div>
             </div>
@@ -100,6 +116,7 @@ const DecisionLog: React.FC<DecisionLogProps> = ({ history }) => {
             )}
         </div>
     );
+
 
 
     return (

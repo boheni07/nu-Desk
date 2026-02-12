@@ -128,6 +128,15 @@ const TicketDetail: React.FC<Props> = ({
 
   const handleRegisterPlan = () => {
     if (!planText) { showToast('처리 계획을 입력해주세요.', 'warning'); return; }
+
+    // 자동 접수된 티켓은 당초 기한보다 늦게 설정 불가
+    if (ticket.status === TicketStatus.RECEIVED_AUTO) {
+      if (isCompletionDelayed) {
+        showToast('자동(시간경과) 접수된 티켓은 처리 기한을 당초 기한보다 늦게 설정할 수 없습니다.', 'error');
+        return;
+      }
+    }
+
     const fileListStr = planFiles.length > 0 ? ` (첨부파일: ${planFiles.map(f => f.name).join(', ')})` : '';
     const note = `처리 계획 등록: ${planText} (완료 예정: ${format(new Date(expectedCompletionDate), 'yyyy-MM-dd')})${fileListStr}`;
     onStatusUpdate(ticket.id, TicketStatus.IN_PROGRESS, {

@@ -109,6 +109,9 @@ const App: React.FC = () => {
     changeView
   });
 
+  // Background tasks for auto-updates (overdue, auto-receive)
+  useBackgroundTasks(tickets, setTickets, setHistory);
+
   // Since useTicketHandlers still needs setX until further refactor, let's keep them but use the hook properly
   // Actually, let's just use the returned handlers from useAppState in the hook call
   // For now, to keep it simple and correct:

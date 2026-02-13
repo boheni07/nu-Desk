@@ -11,6 +11,7 @@ const getHistoryIcon = (status: TicketStatus) => {
     switch (status) {
         case TicketStatus.WAITING: return <Clock size={14} />;
         case TicketStatus.RECEIVED: return <PlayCircle size={14} />;
+        case TicketStatus.RECEIVED_AUTO: return <Clock size={14} />;
         case TicketStatus.IN_PROGRESS: return <RotateCcw size={14} />;
         case TicketStatus.POSTPONE_REQUESTED: return <CalendarDays size={14} />;
         case TicketStatus.COMPLETION_REQUESTED: return <CheckCircle2 size={14} />;

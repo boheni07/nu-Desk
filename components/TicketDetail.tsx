@@ -84,7 +84,8 @@ const TicketDetail: React.FC<Props> = ({
   }, [showPostponeModal, ticket.dueDate]);
 
   useEffect(() => {
-    // 접수 자동화 로직: 지원팀장/지원담당이 열람했을 때만 발생 (관리자 제외)
+    // 접수 자동화 로직: 지원팀장/지원담당이 대기(WAITING) 상태인 티켓을 열람했을 때만 RECEIVED로 전환
+    // RECEIVED_AUTO(자동접수) 상태인 티켓은 이미 접수된 것으로 간주하여 상태를 변경하지 않음
     const canAutoReceive = currentUser.role === UserRole.SUPPORT_LEAD || currentUser.role === UserRole.SUPPORT_STAFF;
     const isPartOfProjectTeam = project.supportStaffIds.includes(currentUser.id);
 
@@ -139,6 +140,8 @@ const TicketDetail: React.FC<Props> = ({
 
     const fileListStr = planFiles.length > 0 ? ` (첨부파일: ${planFiles.map(f => f.name).join(', ')})` : '';
     const note = `처리 계획 등록: ${planText} (완료 예정: ${format(new Date(expectedCompletionDate), 'yyyy-MM-dd')})${fileListStr}`;
+
+    // 접수(RECEIVED) 또는 접수(자동)(RECEIVED_AUTO) 상태에서 처리 계획을 등록하면 처리중(IN_PROGRESS)으로 전환
     onStatusUpdate(ticket.id, TicketStatus.IN_PROGRESS, {
       plan: planText,
       expectedCompletionDate: new Date(expectedCompletionDate).toISOString(),
@@ -152,6 +155,15 @@ const TicketDetail: React.FC<Props> = ({
 
   const handlePostponeRequest = () => {
     if (!postponeDate || !postponeReason) { showToast('연기 희망일과 사유를 모두 입력해주세요.', 'warning'); return; }
+
+    const requestedDate = startOfDay(new Date(postponeDate));
+    const originalDue = startOfDay(new Date(ticket.dueDate));
+
+    if (!isAfter(requestedDate, originalDue)) {
+      showToast('연기 희망일은 현재 마감기한보다 이후 날짜여야 합니다.', 'error');
+      return;
+    }
+
     const originalDateStr = format(new Date(ticket.dueDate), 'yyyy-MM-dd');
     const note = `[기한 연기 요청]\n당초 기한: ${originalDateStr}\n요청 기한: ${postponeDate}\n요청 사유: ${postponeReason}`;
     onStatusUpdate(ticket.id, TicketStatus.POSTPONE_REQUESTED, {
@@ -481,7 +493,16 @@ const TicketDetail: React.FC<Props> = ({
           <Modal title="기한 연기 요청" onClose={() => setShowPostponeModal(false)} onConfirm={handlePostponeRequest} confirmText="연기 요청 전송">
             <div className="space-y-6">
               <div className="p-5 bg-orange-50 rounded-2xl border border-orange-100 flex gap-4 items-start"><AlertTriangle className="text-orange-500 shrink-0" size={24} /><div><p className="text-xs font-black text-orange-800 uppercase tracking-widest mb-1">주의 사항</p><p className="text-[11px] text-orange-600 font-medium leading-relaxed">마감 기한 연기는 고객의 승인이 필요합니다. 상세 사유를 기재해 주세요.</p></div></div>
-              <div className="space-y-2"><label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">연기 희망일</label><input type="date" className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold shadow-sm" value={postponeDate} onChange={(e) => setPostponeDate(e.target.value)} /></div>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">연기 희망일</label>
+                <input
+                  type="date"
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold shadow-sm"
+                  value={postponeDate}
+                  min={format(addBusinessDays(new Date(ticket.dueDate), 1), 'yyyy-MM-dd')}
+                  onChange={(e) => setPostponeDate(e.target.value)}
+                />
+              </div>
               <div className="space-y-2"><label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">구체적 연기 사유</label><textarea className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none text-sm resize-none shadow-sm" rows={5} placeholder="지연 원인과 향후 일정을 상세히 입력하세요." value={postponeReason} onChange={(e) => setPostponeReason(e.target.value)} /></div>
             </div>
           </Modal>

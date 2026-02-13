@@ -12,7 +12,8 @@ import {
     Database,
     LogOut,
     Settings,
-    X
+    X,
+    PieChart
 } from 'lucide-react';
 import { User, UserRole } from '../../types';
 import NavItem from './NavItem';
@@ -60,7 +61,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 <nav className="flex-1 p-6 space-y-2 overflow-y-auto custom-scrollbar flex flex-col">
-                    <NavItem icon={LayoutDashboard} label="대시보드" targetView="dashboard" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
                     <NavItem icon={PlusCircle} label="New Ticket" targetView="create" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
                     <NavItem icon={TicketIcon} label="티켓 관리(진행중)" targetView="list" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
                     <NavItem icon={Archive} label="티켓 기록(완료)" targetView="completed_list" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
@@ -70,6 +70,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <NavItem icon={Activity} label="운영정보 관리" targetView="opsManagement" currentView={view} currentUserRole={currentUser.role} onClick={changeView} supportOrAdmin />
                     <NavItem icon={Building2} label="고객사 관리" targetView="companies" currentView={view} currentUserRole={currentUser.role} onClick={changeView} adminOnly />
                     <NavItem icon={UsersIcon} label="회원 관리" targetView="users" currentView={view} currentUserRole={currentUser.role} onClick={changeView} adminOnly />
+
+                    <div className="pt-8 pb-3 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">Status & Reports</div>
+                    <NavItem icon={LayoutDashboard} label="대시보드" targetView="dashboard" currentView={view} currentUserRole={currentUser.role} onClick={changeView} />
+                    <NavItem icon={PieChart} label="운영보고서" targetView="opsReport" currentView={view} currentUserRole={currentUser.role} onClick={changeView} supportOrAdmin />
 
                     <div className="pt-8 pb-3 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">System</div>
                     <NavItem icon={Building2} label="기관정보 설정" targetView="orgSettings" currentView={view} currentUserRole={currentUser.role} onClick={changeView} adminOnly />

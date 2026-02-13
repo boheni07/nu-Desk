@@ -38,6 +38,7 @@ import { useAppState } from './hooks/useAppState';
 import { useTicketHandlers } from './hooks/useTicketHandlers';
 import { useBackgroundTasks } from './hooks/useBackgroundTasks';
 import Dashboard from './components/Dashboard';
+import OperationalReport from './components/OperationalReport';
 import Sidebar from './components/layout/Sidebar';
 import AppHeader from './components/layout/AppHeader';
 
@@ -71,7 +72,7 @@ const App: React.FC = () => {
     userCount
   } = useAppState();
 
-  const [view, setView] = useState<'dashboard' | 'list' | 'completed_list' | 'create' | 'edit' | 'detail' | 'companies' | 'users' | 'projects' | 'profile' | 'dataManagement' | 'opsManagement' | 'orgSettings'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'list' | 'completed_list' | 'create' | 'edit' | 'detail' | 'companies' | 'users' | 'projects' | 'profile' | 'dataManagement' | 'opsManagement' | 'orgSettings' | 'opsReport'>('dashboard');
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -215,8 +216,9 @@ const App: React.FC = () => {
                   {view === 'profile' && 'My Account Settings'}
                   {view === 'orgSettings' && 'Organization Settings'}
                   {view === 'dataManagement' && 'Data Management'}
+                  {view === 'opsReport' && '운영보고서'}
                 </h2>
-                <p className="text-slate-500 text-sm sm:text-base mt-1">안녕하세요, {currentUser.name}님! {view === 'dashboard' ? '오늘의 시스템 현황입니다.' : view === 'list' && '현재 활성화된 티켓 리스트입니다.'}</p>
+                <p className="text-slate-500 text-sm sm:text-base mt-1">안녕하세요, {currentUser.name}님! {view === 'dashboard' ? '오늘의 시스템 현황입니다.' : view === 'list' || view === 'opsReport' ? '현재 관련 리포트를 확인할 수 있습니다.' : '활성화된 티켓 리스트입니다.'}</p>
               </div>
               {(view === 'detail' || view === 'edit' || view === 'dataManagement' || view === 'orgSettings') && <button onClick={() => changeView('list')} className="flex items-center gap-2 text-slate-500 hover:text-blue-600 font-bold px-4 py-2 rounded-xl border border-slate-200 bg-white shadow-sm transition-all self-start"><ChevronLeft size={20} /> Back to List</button>}
             </div>
@@ -295,6 +297,14 @@ const App: React.FC = () => {
                 <DataManagement
                   currentState={{ companies, users, projects, tickets, comments, history, opsInfo, orgInfo }}
                   onApplyState={handleApplyState}
+                />
+              )}
+              {view === 'opsReport' && (
+                <OperationalReport
+                  tickets={filteredTickets}
+                  projects={filteredProjects}
+                  users={users}
+                  currentUser={currentUser}
                 />
               )}
             </div>
